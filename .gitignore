@@ -26,6 +26,8 @@ wheels/
 
 # Data & Nodes
 data/
+storage/
+database.db
 *.bin
 *.parquet
 *.tmp
