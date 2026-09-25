@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vault — Enterprise Fault-Tolerant Distributed Storage Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            vaultBg: '#080B12',
+            vaultCard: '#111827',
+            vaultCardElevated: '#161F30',
+            vaultBorder: '#263244',
+            vaultCyan: '#38BDF8',
+            vaultTeal: '#14B8A6',
+            vaultGreen: '#22C55E',
+            vaultRed: '#F87171',
+            vaultAmber: '#F59E0B',
+            vaultMuted: '#9CA3AF'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #080B12; color: #E5E7EB; font-family: ui-sans-serif, system-ui, sans-serif; }
+    .code-font { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+  
+  <!-- TOP HEADER NAVBAR -->
+  <header class="border-b border-vaultBorder bg-[#0D121F] px-6 py-3 flex items-center justify-between sticky top-0 z-40">
+    <div class="flex items-center gap-6">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded bg-vaultCyan/20 border border-vaultCyan/50 flex items-center justify-center font-bold text-vaultCyan text-base shadow-lg shadow-vaultCyan/10">V</div>
+        <span class="font-extrabold text-white tracking-wider text-base">VAULT</span>
+        <span class="text-xs px-2 py-0.5 rounded bg-vaultCyan/10 text-vaultCyan border border-vaultCyan/30 font-semibold">ENTERPRISE v2.0</span>
+      </div>
+
+      <!-- WORKSPACE SELECTOR -->
+      <div class="flex items-center gap-2 bg-[#161F30] border border-vaultBorder px-3 py-1.5 rounded text-xs font-medium text-gray-200">
+        <svg class="w-3.5 h-3.5 text-vaultCyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        <span id="currentOrgName">Vault Labs Enterprise</span>
+      </div>
+
+      <!-- 4 MASTER NAVIGATION TABS -->
+      <nav class="flex items-center bg-[#131B2A] p-1 rounded border border-vaultBorder text-xs">
+        <button id="tabStorage" onclick="switchTab('storage')" class="px-3 py-1.5 rounded font-bold text-vaultCyan bg-[#1F2B3E] transition flex items-center gap-1.5">
+          <span>📦</span> STORAGE & S3 IAM
+        </button>
+        <button id="tabOps" onclick="switchTab('ops')" class="px-3 py-1.5 rounded font-bold text-gray-400 hover:text-white transition flex items-center gap-1.5">
+          <span>⚡</span> OPERATIONS & CHAOS
+        </button>
+        <button id="tabMerkle" onclick="switchTab('merkle')" class="px-3 py-1.5 rounded font-bold text-gray-400 hover:text-white transition flex items-center gap-1.5">
+          <span>🌳</span> MERKLE & INTEGRITY
+        </button>
+        <button id="tabBench" onclick="switchTab('bench')" class="px-3 py-1.5 rounded font-bold text-gray-400 hover:text-white transition flex items-center gap-1.5">
+          <span>📊</span> BENCHMARK & RAFT
+        </button>
+      </nav>
+    </div>
+
+    <!-- USER ROLE TESTER DROPDOWN -->
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 bg-[#162032] px-3 py-1.5 rounded border border-vaultBorder text-xs">
+        <span class="text-vaultMuted font-mono">Role Guard:</span>
+        <select id="roleSelector" onchange="changeActiveRole(this.value)" class="bg-transparent text-vaultCyan font-bold outline-none cursor-pointer">
+          <option value="platform_owner" class="bg-[#111827] text-white">Platform Owner</option>
+          <option value="storage_operator" class="bg-[#111827] text-white">Storage Operator</option>
+          <option value="developer" class="bg-[#111827] text-white">Developer</option>
+          <option value="viewer" class="bg-[#111827] text-white">Viewer (Read-Only)</option>
+        </select>
+      </div>
+
+      <button onclick="openModal('authModal')" class="text-xs bg-vaultCyan/10 text-vaultCyan border border-vaultCyan/30 hover:bg-vaultCyan/20 px-3 py-1.5 rounded transition font-medium">Sign In</button>
+      <button onclick="openModal('apiKeyModal')" class="text-xs bg-[#1F2B3E] text-gray-300 border border-vaultBorder hover:border-vaultCyan px-3 py-1.5 rounded transition font-medium">API Keys</button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
+
+    <!-- CLUSTER HEALTH TOP STATS BAR -->
+    <section class="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div class="bg-vaultCard border border-vaultBorder rounded p-4">
+        <div class="text-[11px] font-mono text-vaultMuted uppercase">Cluster Status</div>
+        <div id="statHealth" class="text-lg font-bold text-vaultGreen mt-1 flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-vaultGreen animate-pulse"></span> ONLINE
+        </div>
+      </div>
+      <div class="bg-vaultCard border border-vaultBorder rounded p-4">
+        <div class="text-[11px] font-mono text-vaultMuted uppercase">Active Nodes</div>
+        <div id="statNodes" class="text-lg font-bold text-white mt-1 code-font">5 / 5</div>
+      </div>
+      <div class="bg-vaultCard border border-vaultBorder rounded p-4">
+        <div class="text-[11px] font-mono text-vaultMuted uppercase">Anti-Entropy Sweeps</div>
+        <div id="statScrubs" class="text-lg font-bold text-vaultCyan mt-1 code-font">0</div>
+      </div>
+      <div class="bg-vaultCard border border-vaultBorder rounded p-4">
+        <div class="text-[11px] font-mono text-vaultMuted uppercase">Raft Consensus Leader</div>
+        <div id="statRaftLeader" class="text-sm font-bold text-vaultTeal mt-1.5 code-font">Node-1 (Term 1)</div>
+      </div>
+      <div class="bg-vaultCard border border-vaultBorder rounded p-4">
+        <div class="text-[11px] font-mono text-vaultMuted uppercase">RBAC Guard Role</div>
+        <div id="statActiveRole" class="text-sm font-bold text-vaultCyan mt-1.5 code-font uppercase">PLATFORM_OWNER</div>
+      </div>
+    </section>
+
+    <!-- TAB 1: STORAGE CONSOLE & S3 IAM PLAYGROUND -->
+    <div id="viewStorage" class="space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-white">Multi-Tenant Buckets & S3 API Playground</h2>
+          <p class="text-xs text-vaultMuted">Project: <span class="text-vaultCyan font-mono">hackathon-demo</span> • Tenant Isolation: <span class="text-vaultGreen font-mono">ACTIVE (RLS)</span></p>
+        </div>
+        <button onclick="openModal('createBucketModal')" class="text-xs bg-vaultCyan text-gray-950 font-bold px-4 py-2 rounded hover:bg-sky-400 transition">
+          + Create Bucket
+        </button>
+      </div>
+
+      <!-- BUCKET CARDS -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-white text-sm">primary-datasets</span>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-sky-950 text-vaultCyan border border-sky-800">REED_SOLOMON_2_1</span>
+          </div>
+          <div class="text-xs text-vaultMuted">Tenant: Vault Labs Enterprise • ID: bkt_primary</div>
+          <div class="flex justify-between items-center text-xs font-mono pt-2 border-t border-vaultBorder">
+            <span class="text-vaultMuted">3 Objects</span>
+            <span class="text-vaultGreen">Integrity Verified 100%</span>
+          </div>
+        </div>
+
+        <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-white text-sm">backup-blobs</span>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-950 text-vaultGreen border border-emerald-800">REPLICATION_3X</span>
+          </div>
+          <div class="text-xs text-vaultMuted">Tenant: Vault Labs Enterprise • ID: bkt_backup</div>
+          <div class="flex justify-between items-center text-xs font-mono pt-2 border-t border-vaultBorder">
+            <span class="text-vaultMuted">1 Object</span>
+            <span class="text-vaultGreen">Integrity Verified 100%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- UPLOAD & OBJECT TABLE -->
+      <div class="bg-vaultCard border border-vaultBorder rounded p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-vaultBorder pb-3">
+          <h3 class="font-bold text-white text-sm">Stored Objects & Merkle Digests</h3>
+          <form id="uploadForm" class="flex items-center gap-3">
+            <input type="file" id="fileInput" class="text-xs text-vaultMuted file:bg-[#1C2638] file:text-vaultCyan file:border file:border-vaultBorder file:px-3 file:py-1 file:rounded file:cursor-pointer" required />
+            <select id="policyInput" class="bg-[#131B2A] border border-vaultBorder text-xs text-gray-200 px-2 py-1 rounded">
+              <option value="REED_SOLOMON_2_1">Reed-Solomon (2+1)</option>
+              <option value="REPLICATION_3X">3x Replication</option>
+            </select>
+            <button type="submit" class="text-xs bg-vaultCyan text-gray-950 font-bold px-3 py-1.5 rounded hover:bg-sky-400 transition">Upload Payload</button>
+          </form>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono">
+            <thead>
+              <tr class="border-b border-vaultBorder text-vaultMuted uppercase">
+                <th class="py-2">Object Key</th>
+                <th class="py-2">Policy</th>
+                <th class="py-2">Size</th>
+                <th class="py-2">Merkle Root Hash</th>
+                <th class="py-2">Replica Map</th>
+                <th class="py-2 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="objectTableBody" class="divide-y divide-vaultBorder/50 text-gray-300">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- AWS S3 SDK SNIPPETS & IAM POLICY SIMULATOR -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- S3 SDK SNIPPETS -->
+        <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-3">
+          <div class="flex justify-between items-center border-b border-vaultBorder pb-2">
+            <h3 class="font-bold text-white text-xs">AWS S3 SDK Code Snippet Generator</h3>
+            <select id="sdkLangSelect" onchange="loadS3Snippets()" class="bg-[#162032] border border-vaultBorder text-xs text-vaultCyan px-2 py-1 rounded">
+              <option value="curl">Curl HTTP</option>
+              <option value="python_boto3">Python (boto3)</option>
+              <option value="node_sdk">Node.js (@aws-sdk)</option>
+              <option value="go_sdk">Go (aws-sdk-go-v2)</option>
+              <option value="aws_cli">AWS CLI</option>
+            </select>
+          </div>
+          <pre id="snippetBox" class="bg-[#0B0F19] p-3 rounded text-[11px] code-font text-vaultCyan overflow-x-auto border border-vaultBorder h-48"></pre>
+        </div>
+
+        <!-- IAM POLICY EVALUATOR -->
+        <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-3">
+          <div class="border-b border-vaultBorder pb-2">
+            <h3 class="font-bold text-white text-xs">AWS S3 IAM JSON Policy Evaluator</h3>
+            <p class="text-[11px] text-vaultMuted">Simulate AWS JSON policy rules (`Allow`/`Deny`) against storage endpoints</p>
+          </div>
+          <div class="space-y-2 text-xs">
+            <textarea id="iamJsonInput" class="w-full bg-[#0B0F19] border border-vaultBorder rounded p-2 text-[11px] font-mono text-vaultCyan h-24">{
+  "Statement": [
+    { "Sid": "AllowRead", "Effect": "Allow", "Action": ["s3:GetObject"], "Resource": ["arn:aws:s3:::primary-datasets/*"] }
+  ]
+}</textarea>
+            <div class="flex gap-2">
+              <input type="text" id="iamAction" value="s3:GetObject" class="flex-1 bg-[#162032] border border-vaultBorder rounded px-2 py-1 text-xs text-white" placeholder="Action" />
+              <input type="text" id="iamResource" value="arn:aws:s3:::primary-datasets/file.bin" class="flex-1 bg-[#162032] border border-vaultBorder rounded px-2 py-1 text-xs text-white" placeholder="Resource" />
+              <button onclick="evaluateIAM()" class="bg-vaultCyan text-gray-950 font-bold px-3 py-1 rounded text-xs">Evaluate</button>
+            </div>
+            <div id="iamResult" class="p-2 rounded bg-[#0B0F19] border border-vaultBorder font-mono text-xs text-vaultGreen">Result: Awaiting Evaluation</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: OPERATIONS & CHAOS ENGINE -->
+    <div id="viewOps" class="space-y-6 hidden">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-white">5-Node Infrastructure Topology & Chaos Simulation</h2>
+          <p class="text-xs text-vaultMuted">Rack awareness (`rack-1`, `rack-2`, `rack-3`) & hardware S.M.A.R.T telemetry</p>
+        </div>
+        <button onclick="triggerRecover()" class="text-xs bg-vaultGreen text-gray-950 font-bold px-4 py-2 rounded hover:bg-emerald-400 transition">
+          Recover Cluster Nodes
+        </button>
+      </div>
+
+      <!-- NODE TOPOLOGY GRID -->
+      <div id="nodeGrid" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- EVENT & SECURITY AUDIT STREAMS -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-vaultCard border border-vaultBorder rounded p-4 font-mono text-xs space-y-2">
+          <div class="text-vaultMuted flex justify-between border-b border-vaultBorder pb-2">
+            <span>STORAGE CLUSTER LOG STREAM</span>
+            <span class="text-vaultCyan">WS ACTIVE</span>
+          </div>
+          <div id="eventStream" class="h-48 overflow-y-auto space-y-1 text-gray-300"></div>
+        </div>
+
+        <div class="bg-vaultCard border border-vaultBorder rounded p-4 font-mono text-xs space-y-2">
+          <div class="text-vaultMuted flex justify-between border-b border-vaultBorder pb-2">
+            <span>SECURITY AUDIT TRAIL (OWASP/NIST)</span>
+            <span class="text-vaultGreen">RBAC ACTIVE</span>
+          </div>
+          <div id="auditLogStream" class="h-48 overflow-y-auto space-y-1 text-gray-300"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: MERKLE TREE & INTEGRITY INSPECTOR -->
+    <div id="viewMerkle" class="space-y-6 hidden">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-white">Merkle Tree Structural Inspector & Bitrot Byte Offset Inspector</h2>
+          <p class="text-xs text-vaultMuted">Cryptographic integrity proof using SHA-256 binary leaf hashing</p>
+        </div>
+        <button onclick="inspectMerkleForFirstObject()" class="text-xs bg-vaultCyan text-gray-950 font-bold px-4 py-2 rounded">
+          Inspect Object Merkle Graph
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- MERKLE TREE DISPLAY -->
+        <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-3">
+          <h3 class="font-bold text-white text-xs border-b border-vaultBorder pb-2">Merkle Hash Tree Visualizer</h3>
+          <pre id="merkleTreeBox" class="bg-[#0B0F19] p-3 rounded text-[11px] code-font text-vaultCyan overflow-x-auto border border-vaultBorder h-64">Click "Inspect Object Merkle Graph" to view structural tree digest.</pre>
+        </div>
+
+        <!-- BITROT BYTE OFFSET DIFF INSPECTOR -->
+        <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-3">
+          <h3 class="font-bold text-white text-xs border-b border-vaultBorder pb-2">Bitrot Byte-Level Corrupted Block Diff</h3>
+          <pre id="bitrotDiffBox" class="bg-[#0B0F19] p-3 rounded text-[11px] code-font text-vaultRed overflow-x-auto border border-vaultBorder h-64">Click "Inspect Object Merkle Graph" to scan byte diffs.</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: BENCHMARK & RAFT CONSENSUS LAB -->
+    <div id="viewBench" class="space-y-6 hidden">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-white">Performance Benchmarks & Raft Consensus State Machine</h2>
+          <p class="text-xs text-vaultMuted">Measure TTFB, P50/P95/P99 latency percentiles, and metadata Raft consensus</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="runBenchmark()" class="text-xs bg-vaultCyan text-gray-950 font-bold px-3 py-2 rounded">Run Micro-Benchmark</button>
+          <button onclick="triggerRaftElection()" class="text-xs bg-vaultTeal text-gray-950 font-bold px-3 py-2 rounded">Trigger Raft Election</button>
+        </div>
+      </div>
+
+      <!-- BENCHMARK RESULTS -->
+      <div id="benchResultsBox" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-vaultCard border border-vaultBorder rounded p-4">
+          <div class="text-xs font-mono text-vaultMuted">TTFB (Time to First Byte)</div>
+          <div id="benchTtfb" class="text-xl font-bold text-vaultCyan code-font mt-1">1.2 ms</div>
+        </div>
+        <div class="bg-vaultCard border border-vaultBorder rounded p-4">
+          <div class="text-xs font-mono text-vaultMuted">P50 Read Latency</div>
+          <div id="benchP50" class="text-xl font-bold text-vaultGreen code-font mt-1">3.4 ms</div>
+        </div>
+        <div class="bg-vaultCard border border-vaultBorder rounded p-4">
+          <div class="text-xs font-mono text-vaultMuted">P95 Read Latency</div>
+          <div id="benchP95" class="text-xl font-bold text-vaultAmber code-font mt-1">7.8 ms</div>
+        </div>
+        <div class="bg-vaultCard border border-vaultBorder rounded p-4">
+          <div class="text-xs font-mono text-vaultMuted">P99 Tail Latency</div>
+          <div id="benchP99" class="text-xl font-bold text-vaultRed code-font mt-1">18.5 ms</div>
+        </div>
+      </div>
+
+      <!-- RAFT LOG ENTRIES -->
+      <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-3 font-mono text-xs">
+        <h3 class="font-bold text-white border-b border-vaultBorder pb-2">Raft Metadata Replicas Consensus Log Entries</h3>
+        <div id="raftLogBox" class="h-48 overflow-y-auto space-y-1 text-gray-300"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODALS -->
+
+  <div id="authModal" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden z-50">
+    <div class="bg-[#0F141C] border border-[#202A36] rounded-lg p-6 max-w-md w-full space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-vaultBorder pb-3">
+        <h3 class="font-bold text-white text-base">Sign In to Vault Workspace</h3>
+        <button onclick="closeModal('authModal')" class="text-gray-400 hover:text-white">✕</button>
+      </div>
+      <form id="loginForm" class="space-y-3">
+        <div>
+          <label class="text-xs text-vaultMuted font-mono">Email Address</label>
+          <input type="email" id="authEmail" value="owner@vault.io" class="w-full bg-[#161F2E] border border-vaultBorder rounded px-3 py-2 text-xs text-white outline-none focus:border-vaultCyan" required />
+        </div>
+        <div>
+          <label class="text-xs text-vaultMuted font-mono">Password (min 15 chars NIST rule)</label>
+          <input type="password" id="authPassword" value="VaultPlatform2026!Secure" class="w-full bg-[#161F2E] border border-vaultBorder rounded px-3 py-2 text-xs text-white outline-none focus:border-vaultCyan" required />
+        </div>
+        <button type="submit" class="w-full bg-vaultCyan text-gray-950 font-bold py-2 rounded text-xs hover:bg-sky-400 transition">
+          Authenticate Session
+        </button>
+      </form>
+      <div id="authResponse" class="text-xs font-mono text-vaultCyan"></div>
+    </div>
+  </div>
+
+  <div id="apiKeyModal" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden z-50">
+    <div class="bg-[#0F141C] border border-[#202A36] rounded-lg p-6 max-w-lg w-full space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-vaultBorder pb-3">
+        <h3 class="font-bold text-white text-base">API Key Credentials</h3>
+        <button onclick="closeModal('apiKeyModal')" class="text-gray-400 hover:text-white">✕</button>
+      </div>
+      <div class="space-y-3">
+        <button onclick="generateApiKey()" class="bg-vaultCyan text-gray-950 text-xs font-bold px-3 py-1.5 rounded hover:bg-sky-400 transition">+ Generate New Machine Key</button>
+        <div id="apiKeyList" class="space-y-2 font-mono text-xs"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    let activeRole = "platform_owner";
+    let activeUserId = "usr_owner";
+    let sdkSnippets = {};
+
+    function switchTab(tab) {
+      ['storage', 'ops', 'merkle', 'bench'].forEach(t => {
+        document.getElementById(`view${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.add('hidden');
+        document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`).className = 'px-3 py-1.5 rounded font-bold text-gray-400 hover:text-white transition flex items-center gap-1.5';
+      });
+      document.getElementById(`view${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.remove('hidden');
+      document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).className = 'px-3 py-1.5 rounded font-bold text-vaultCyan bg-[#1F2B3E] transition flex items-center gap-1.5';
+    }
+
+    function changeActiveRole(role) {
+      activeRole = role;
+      document.getElementById('statActiveRole').innerText = role.toUpperCase();
+      fetchClusterStatus();
+    }
+
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    async function fetchClusterStatus() {
+      try {
+        const res = await fetch('http://localhost:8000/api/v1/cluster/status');
+        const data = await res.json();
+        
+        document.getElementById('statNodes').innerText = `${data.nodes.filter(n => n.status === 'ONLINE').length} / ${data.nodes.length}`;
+        document.getElementById('statScrubs').innerText = data.scrubber_metrics.scrub_count;
+        document.getElementById('statRaftLeader').innerText = `Node-${data.raft_state.leader_id} (Term ${data.raft_state.current_term})`;
+
+        renderNodes(data.nodes);
+        renderObjects();
+        renderAuditLogs(data.audit_logs || []);
+        renderLogs(data.event_logs || []);
+        renderRaftLogs(data.raft_state.log_entries || []);
+      } catch (err) {
+        console.error("Failed connecting to Vault backend", err);
+      }
+    }
+
+    function renderNodes(nodes) {
+      const grid = document.getElementById('nodeGrid');
+      grid.innerHTML = nodes.map(n => `
+        <div class="bg-vaultCard border ${n.status === 'ONLINE' ? 'border-vaultBorder' : 'border-vaultRed/80'} rounded p-3 space-y-2 text-xs">
+          <div class="flex justify-between items-center">
+            <span class="font-bold text-white font-mono">Node-${n.id}</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono ${n.status === 'ONLINE' ? 'bg-emerald-950 text-vaultGreen border border-emerald-800' : 'bg-rose-950 text-vaultRed border border-rose-800'}">${n.status}</span>
+          </div>
+          <div class="text-[11px] text-vaultMuted">Rack: <span class="text-vaultCyan font-mono">${n.rack}</span></div>
+          <div class="text-[11px] text-vaultMuted">SMART Health: <span class="font-mono ${n.smart_health > 60 ? 'text-vaultGreen' : 'text-vaultAmber'}">${n.smart_health}%</span></div>
+          <div class="pt-2 flex gap-1 border-t border-vaultBorder/60">
+            <button onclick="killNode(${n.id})" class="flex-1 bg-rose-950 text-vaultRed hover:bg-rose-900 border border-rose-800 py-1 rounded text-[10px] font-bold">FAIL</button>
+            <button onclick="injectBitrot(${n.id})" class="flex-1 bg-amber-950 text-vaultAmber hover:bg-amber-900 border border-amber-800 py-1 rounded text-[10px] font-bold">BITROT</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function renderObjects() {
+      const res = await fetch('http://localhost:8000/api/v1/objects');
+      const objects = await res.json();
+      const tbody = document.getElementById('objectTableBody');
+
+      tbody.innerHTML = objects.map(o => `
+        <tr class="hover:bg-[#162030]">
+          <td class="py-2.5 font-bold text-white">${o.filename}</td>
+          <td class="py-2.5 text-vaultCyan">${o.policy}</td>
+          <td class="py-2.5">${o.size_bytes} B</td>
+          <td class="py-2.5 text-gray-400 font-mono text-[11px]">${o.merkle_root.slice(0, 16)}...</td>
+          <td class="py-2.5">${o.chunks.map(c => `[N${c.node_id}:${c.status}]`).join(' ')}</td>
+          <td class="py-2.5 text-right flex justify-end gap-1">
+            <button onclick="inspectMerkle('${o.id}')" class="bg-vaultTeal/20 text-vaultTeal hover:bg-vaultTeal/30 border border-vaultTeal/40 px-2 py-1 rounded text-[11px]">Merkle</button>
+            <button onclick="downloadObject('${o.id}')" class="bg-vaultCyan/20 text-vaultCyan hover:bg-vaultCyan/30 border border-vaultCyan/40 px-2 py-1 rounded text-[11px]">Download</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadS3Snippets() {
+      const res = await fetch('http://localhost:8000/api/v1/s3/snippets');
+      sdkSnippets = await res.json();
+      const lang = document.getElementById('sdkLangSelect').value;
+      document.getElementById('snippetBox').innerText = sdkSnippets[lang] || sdkSnippets['curl'];
+    }
+
+    async function evaluateIAM() {
+      const pJson = document.getElementById('iamJsonInput').value;
+      const act = document.getElementById('iamAction').value;
+      const res = document.getElementById('iamResource').value;
+
+      const formData = new FormData();
+      formData.append('policy_json', pJson);
+      formData.append('action', act);
+      formData.append('resource', res);
+
+      const r = await fetch('http://localhost:8000/api/v1/iam/evaluate', { method: 'POST', body: formData });
+      const data = await r.json();
+      const box = document.getElementById('iamResult');
+      if (data.decision === 'ALLOW') {
+        box.className = "p-2 rounded bg-emerald-950 border border-emerald-800 font-mono text-xs text-vaultGreen";
+        box.innerText = `Decision: ALLOW (${data.reason})`;
+      } else {
+        box.className = "p-2 rounded bg-rose-950 border border-rose-800 font-mono text-xs text-vaultRed";
+        box.innerText = `Decision: DENY (${data.reason})`;
+      }
+    }
+
+    async function inspectMerkle(objectId) {
+      switchTab('merkle');
+      const rTree = await fetch(`http://localhost:8000/api/v1/merkle/inspect/${objectId}`);
+      const dTree = await rTree.json();
+      document.getElementById('merkleTreeBox').innerText = JSON.stringify(dTree.merkle_tree, null, 2);
+
+      const rDiff = await fetch(`http://localhost:8000/api/v1/merkle/bitrot-diff/${objectId}`);
+      const dDiff = await rDiff.json();
+      document.getElementById('bitrotDiffBox').innerText = JSON.stringify(dDiff.diff_inspection, null, 2);
+    }
+
+    async function inspectMerkleForFirstObject() {
+      const res = await fetch('http://localhost:8000/api/v1/objects');
+      const objs = await res.json();
+      if (objs.length > 0) inspectMerkle(objs[0].id);
+    }
+
+    async function runBenchmark() {
+      const res = await fetch('http://localhost:8000/api/v1/benchmark/run');
+      const data = await res.json();
+      document.getElementById('benchTtfb').innerText = `${data.time_to_first_byte_ms} ms`;
+      document.getElementById('benchP50').innerText = `${data.read_latency.p50} ms`;
+      document.getElementById('benchP95').innerText = `${data.read_latency.p95} ms`;
+      document.getElementById('benchP99').innerText = `${data.read_latency.p99} ms`;
+    }
+
+    async function triggerRaftElection() {
+      const res = await fetch('http://localhost:8000/api/v1/raft/election', { method: 'POST' });
+      fetchClusterStatus();
+    }
+
+    function renderAuditLogs(logs) {
+      const container = document.getElementById('auditLogStream');
+      container.innerHTML = logs.map(l => `
+        <div class="flex items-center justify-between text-[11px]">
+          <span class="text-vaultMuted">${new Date(l.timestamp * 1000).toLocaleTimeString()}</span>
+          <span class="font-bold ${l.action.includes('DENIED') ? 'text-vaultRed' : 'text-vaultCyan'}">${l.action}</span>
+          <span class="text-gray-400">${l.resource_id}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderLogs(logs) {
+      const container = document.getElementById('eventStream');
+      container.innerHTML = logs.map(l => `<div class="text-[11px]">${l}</div>`).join('');
+    }
+
+    function renderRaftLogs(logs) {
+      const container = document.getElementById('raftLogBox');
+      container.innerHTML = logs.map(l => `
+        <div class="flex justify-between text-[11px]">
+          <span class="text-vaultTeal">Index ${l.index} (Term ${l.term})</span>
+          <span class="text-gray-300 font-mono">${l.cmd}</span>
+        </div>
+      `).join('');
+    }
+
+    async function killNode(nodeId) {
+      const formData = new FormData();
+      formData.append('node_id', nodeId);
+      const res = await fetch('http://localhost:8000/api/v1/chaos/kill-node', {
+        method: 'POST',
+        headers: { 'x-user-role': activeRole, 'x-user-id': activeUserId },
+        body: formData
+      });
+      if (res.status === 403) alert("403 Forbidden: Active role (" + activeRole + ") lacks chaos execution permission!");
+      fetchClusterStatus();
+    }
+
+    async function injectBitrot(nodeId) {
+      const formData = new FormData();
+      formData.append('node_id', nodeId);
+      const res = await fetch('http://localhost:8000/api/v1/chaos/bitrot', {
+        method: 'POST',
+        headers: { 'x-user-role': activeRole, 'x-user-id': activeUserId },
+        body: formData
+      });
+      if (res.status === 403) alert("403 Forbidden: Active role (" + activeRole + ") lacks bitrot injection permission!");
+      fetchClusterStatus();
+    }
+
+    async function triggerRecover() {
+      const res = await fetch('http://localhost:8000/api/v1/chaos/recover', {
+        method: 'POST',
+        headers: { 'x-user-role': activeRole, 'x-user-id': activeUserId }
+      });
+      if (res.status === 403) alert("403 Forbidden: Active role (" + activeRole + ") cannot trigger cluster recovery!");
+      fetchClusterStatus();
+    }
+
+    async function downloadObject(objectId) {
+      const res = await fetch(`http://localhost:8000/api/v1/objects/${objectId}/download`, {
+        headers: { 'x-user-role': activeRole, 'x-user-id': activeUserId }
+      });
+      if (res.status === 403) {
+        alert("403 Forbidden: Active role (" + activeRole + ") cannot download objects!");
+        return;
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `download_${objectId.slice(0, 6)}.bin`;
+      a.click();
+    }
+
+    document.getElementById('uploadForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const file = document.getElementById('fileInput').files[0];
+      const policy = document.getElementById('policyInput').value;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('policy', policy);
+
+      const res = await fetch('http://localhost:8000/api/v1/objects/upload', {
+        method: 'POST',
+        headers: { 'x-user-role': activeRole, 'x-user-id': activeUserId },
+        body: formData
+      });
+
+      if (res.status === 403) {
+        alert("403 Forbidden: Active role (" + activeRole + ") is not allowed to upload files!");
+        return;
+      }
+      fetchClusterStatus();
+    };
+
+    document.getElementById('loginForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPassword').value;
+      const formData = new FormData();
+      formData.append('email', email);
+      formData.append('password', password);
+
+      const res = await fetch('http://localhost:8000/api/v1/auth/login', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById('authResponse').innerText = `Authenticated: ${data.user.display_name} (${data.current_role})`;
+        activeRole = data.current_role;
+        document.getElementById('roleSelector').value = data.current_role;
+        changeActiveRole(data.current_role);
+      } else {
+        document.getElementById('authResponse').innerText = `Auth Error: ${data.detail}`;
+      }
+    };
+
+    const ws = new WebSocket('ws://localhost:8000/ws/telemetry');
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      document.getElementById('statScrubs').innerText = data.scrubber_metrics.scrub_count;
+      if (data.raft_state) {
+        document.getElementById('statRaftLeader').innerText = `Node-${data.raft_state.leader_id} (Term ${data.raft_state.current_term})`;
+        renderRaftLogs(data.raft_state.log_entries);
+      }
+      renderNodes(data.nodes);
+      if (data.audit_logs) renderAuditLogs(data.audit_logs);
+      if (data.logs) renderLogs(data.logs);
+    };
+
+    loadS3Snippets();
+    fetchClusterStatus();
+  </script>
+</body>
+</html>
