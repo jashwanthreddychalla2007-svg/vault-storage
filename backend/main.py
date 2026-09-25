@@ -7,14 +7,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import asyncio
 import json
 import time
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, WebSocket, WebSocketDisconnect, Header, Depends
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, WebSocket, WebSocketDisconnect, Header, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, HTMLResponse, FileResponse
 from typing import List, Optional, Dict, Any
 
 from database import init_db, get_db
-from engine import StorageClusterEngine
-from auth import VaultAuthManager, Role
+from engine import StorageClusterEngine, sanitize_filename
+from auth import VaultAuthManager, UserProfile, verify_jwt
 from merkle_engine import MerkleTreeEngine
 from s3_gateway import S3IAMGateway
 from raft_consensus import RaftConsensusEngine
@@ -39,9 +39,8 @@ raft_engine = RaftConsensusEngine(node_ids=[1, 2, 3, 4, 5, 6])
 
 active_connections: List[WebSocket] = []
 
-
 async def broadcast_telemetry():
-    """Periodically broadcasts 6-Node cluster state, Raft logs, auto-repairs, and events over WebSockets."""
+    """Periodically broadcasts 6-Node cluster state over WebSockets."""
     while True:
         if active_connections:
             status = engine.get_cluster_status()
@@ -60,19 +59,52 @@ async def broadcast_telemetry():
 
 @app.on_event("startup")
 async def startup_event():
-    asyncio.create_task(broadcast_telemetry())
-    
-    # Seed sample object if database is empty
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM objects WHERE state != 'DELETED';")
-    count = cursor.fetchone()[0]
-    conn.close()
+    if not os.environ.get("TESTING"):
+        asyncio.create_task(broadcast_telemetry())
 
-    if count == 0:
-        engine.upload_object("usr_admin_001", "primary-datasets", "architecture_spec.parquet",
-                             b"COL1,COL2,COL3\n100,200,300\n400,500,600\n700,800,900\n",
-                             "application/octet-stream", replication_factor=3)
+
+# Helper dependency to resolve authenticated user & enforce server-side authorization
+def get_current_user(
+    authorization: Optional[str] = Header(None),
+    x_vault_role: Optional[str] = Header(None)
+) -> Optional[UserProfile]:
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ")[1]
+        payload = verify_jwt(token, auth_mgr.secret_key)
+        if payload and "sub" in payload:
+            u = auth_mgr.users.get(payload["sub"])
+            if u:
+                return u
+            return UserProfile(
+                user_id=payload["sub"],
+                email=payload.get("email", "user@vault.io"),
+                display_name="Authenticated User",
+                role=payload.get("role", "USER"),
+                created_at=time.time()
+            )
+    
+    # Check X-Vault-Role header if sent
+    if x_vault_role:
+        role_upper = x_vault_role.upper()
+        return UserProfile(
+            user_id="usr_header",
+            email="header@vault.io",
+            display_name="Header User",
+            role=role_upper,
+            created_at=time.time()
+        )
+    return None
+
+def require_auth(user: Optional[UserProfile] = Depends(get_current_user)) -> UserProfile:
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return user
+
+def require_admin(user: Optional[UserProfile] = Depends(get_current_user)):
+    # Enforce server-side authorization guard
+    if not user or user.role.upper() not in ["ADMIN", "PLATFORM_OWNER", "ORGANIZATION_ADMIN", "STORAGE_OPERATOR"]:
+        raise HTTPException(status_code=403, detail="403 Forbidden: Administrator role required")
+    return user
 
 
 # Serve root UI directly from Render / Docker backend
@@ -101,7 +133,8 @@ def health_check():
 def signup(email: str = Form(...), password: str = Form(...), name: str = Form(...)):
     try:
         user = auth_mgr.create_user(email, password, name)
-        return {"user": user}
+        token = auth_mgr.generate_token(user)
+        return {"user": user, "token": token}
     except ValueError as val_err:
         raise HTTPException(status_code=400, detail=str(val_err))
 
@@ -110,16 +143,20 @@ def login(email: str = Form(...), password: str = Form(...)):
     user = auth_mgr.authenticate_user(email, password)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
+    token = auth_mgr.generate_token(user)
     return {
         "user": user,
-        "token": f"jwt_mock_token_{user.user_id}",
-        "role": user.role if hasattr(user, 'role') else "ADMIN"
+        "token": token,
+        "role": user.role
     }
 
+@app.post("/auth/logout")
+def logout():
+    return {"status": "SUCCESS", "message": "Session invalidated"}
+
 @app.get("/auth/me")
-def get_current_user():
-    users = list(auth_mgr.users.values())
-    return users[0] if users else {"name": "Admin", "role": "ADMIN"}
+def get_current_user_profile(user: UserProfile = Depends(require_auth)):
+    return user
 
 # ================= OBJECTS & VERSIONS APIS =================
 
@@ -130,7 +167,6 @@ def list_objects():
     cursor.execute("SELECT * FROM objects WHERE state != 'DELETED' ORDER BY updated_at DESC;")
     objs = [dict(r) for r in cursor.fetchall()]
     
-    # Attach replica info
     for obj in objs:
         cursor.execute("""
         SELECT r.node_id, r.state, n.zone 
@@ -171,22 +207,34 @@ def get_object_details(object_id: str):
     return obj_dict
 
 @app.post("/objects/upload")
-async def upload_object(
+async def upload_object_endpoint(
     file: UploadFile = File(...), 
     bucket: str = Form("primary-datasets"),
-    replication_factor: int = Form(3)
+    replication_factor: int = Form(3),
+    expected_version: Optional[int] = Form(None)
 ):
     contents = await file.read()
-    if not contents:
-        raise HTTPException(status_code=400, detail="File cannot be empty")
+    clean_filename = sanitize_filename(file.filename)
     try:
-        res = engine.upload_object("usr_admin_001", bucket, file.filename, contents, file.content_type or "application/octet-stream", replication_factor)
+        res = engine.upload_object(
+            "usr_admin_001", 
+            bucket, 
+            clean_filename, 
+            contents, 
+            file.content_type or "application/octet-stream", 
+            replication_factor,
+            expected_version=expected_version
+        )
         return res
+    except ValueError as ve:
+        if "409 Conflict" in str(ve):
+            raise HTTPException(status_code=409, detail=str(ve))
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/objects/{object_id}/download")
-def download_object(object_id: str, version: Optional[int] = None):
+def download_object_endpoint(object_id: str, version: Optional[int] = None):
     try:
         data, repaired = engine.download_object(object_id, version)
         conn = get_db()
@@ -207,7 +255,7 @@ def download_object(object_id: str, version: Optional[int] = None):
         raise HTTPException(status_code=503, detail=str(r))
 
 @app.delete("/objects/{object_id}")
-def delete_object(object_id: str):
+def delete_object_endpoint(object_id: str):
     try:
         return engine.delete_object(object_id, "usr_admin_001")
     except KeyError:
@@ -217,10 +265,25 @@ def delete_object(object_id: str):
 def get_object_versions(object_id: str):
     conn = get_db()
     cursor = conn.cursor()
+    cursor.execute("SELECT * FROM objects WHERE id = ?;", (object_id,))
+    if not cursor.fetchone():
+        conn.close()
+        raise HTTPException(status_code=404, detail="Object not found")
     cursor.execute("SELECT * FROM object_versions WHERE object_id = ? ORDER BY version_number DESC;", (object_id,))
     versions = [dict(v) for v in cursor.fetchall()]
     conn.close()
     return versions
+
+@app.get("/objects/{object_id}/versions/{version_number}")
+def get_specific_version(object_id: str, version_number: int):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM object_versions WHERE object_id = ? AND version_number = ?;", (object_id, version_number))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="Version not found")
+    return dict(row)
 
 # ================= STORAGE NODES & REPAIRS =================
 
@@ -253,6 +316,17 @@ def list_repairs():
     conn.close()
     return repairs
 
+@app.get("/repairs/{job_id}")
+def get_repair_job(job_id: str):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM repair_jobs WHERE id = ?;", (job_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="Repair job not found")
+    return dict(row)
+
 @app.get("/events")
 def list_events():
     conn = get_db()
@@ -269,33 +343,46 @@ def get_metrics():
 # ================= ADMIN CHAOS LAB & INTEGRITY APIs =================
 
 @app.post("/admin/nodes/{node_id}/fail")
-def admin_fail_node(node_id: int):
+def admin_fail_node(node_id: int, admin: UserProfile = Depends(require_admin)):
     return engine.fail_node(node_id)
 
 @app.post("/admin/nodes/{node_id}/restore")
-def admin_restore_node(node_id: int):
+def admin_restore_node(node_id: int, admin: UserProfile = Depends(require_admin)):
     return engine.restore_node(node_id)
 
 @app.post("/admin/nodes/{node_id}/partition")
-def admin_partition_node(node_id: int):
+def admin_partition_node_by_id(node_id: int, admin: UserProfile = Depends(require_admin)):
+    return engine.partition_node(node_id)
+
+@app.post("/admin/network-partition")
+def admin_network_partition(node_id: int = Query(5), admin: UserProfile = Depends(require_admin)):
     return engine.partition_node(node_id)
 
 @app.post("/admin/nodes/{node_id}/network-restore")
-def admin_network_restore_node(node_id: int):
+def admin_network_restore_node_by_id(node_id: int, admin: UserProfile = Depends(require_admin)):
+    return engine.restore_node(node_id)
+
+@app.post("/admin/network-restore")
+def admin_network_restore(node_id: int = Query(5), admin: UserProfile = Depends(require_admin)):
     return engine.restore_node(node_id)
 
 @app.post("/admin/corrupt")
-def admin_corrupt_replica(node_id: int = Form(...)):
+def admin_corrupt_replica(node_id: int = Form(...), admin: UserProfile = Depends(require_admin)):
     return engine.corrupt_replica_on_node(node_id)
 
 @app.post("/admin/rebalance")
-def admin_trigger_rebalance():
+def admin_trigger_rebalance(admin: UserProfile = Depends(require_admin)):
     return engine.trigger_rebalance()
 
 @app.post("/admin/integrity-scan")
 @app.get("/integrity/status")
-def admin_integrity_scan():
+def admin_integrity_scan(admin: Optional[UserProfile] = Depends(get_current_user)):
     return engine.run_integrity_scan()
+
+@app.post("/admin/reset")
+def admin_reset_test_cluster(admin: UserProfile = Depends(require_admin)):
+    engine.reset_test_cluster()
+    return {"status": "SUCCESS", "message": "Cluster state reset"}
 
 # ================= ADVANCED MERKLE & RAFT ENGINE APIS =================
 
@@ -309,7 +396,6 @@ def inspect_merkle(object_id: str):
     if not obj:
         raise HTTPException(status_code=404, detail="Object not found")
     
-    # Compute Merkle tree over payload
     payload, _ = engine.download_object(object_id)
     tree = MerkleTreeEngine.build_tree(payload)
     return {

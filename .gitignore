@@ -28,6 +28,9 @@ wheels/
 data/
 storage/
 database.db
+database.db-wal
+database.db-shm
+test_database.db*
 *.bin
 *.parquet
 *.tmp
