@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package vault;
+
+// Vault gRPC Service Definitions for Node Communication & Metadata Quorum
+
+service VaultNodeService {
+  rpc WriteChunk (WriteChunkRequest) returns (WriteChunkResponse);
+  rpc ReadChunk (ReadChunkRequest) returns (ReadChunkResponse);
+  rpc VerifyHash (VerifyHashRequest) returns (VerifyHashResponse);
+  rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse);
+  rpc RebalanceChunk (RebalanceRequest) returns (RebalanceResponse);
+}
+
+message VectorClock {
+  string node_id = 1;
+  uint64 sequence_number = 2;
+  int64 timestamp = 3;
+}
+
+message WriteChunkRequest {
+  string object_id = 1;
+  string chunk_id = 2;
+  uint32 chunk_index = 3;
+  bytes data = 4;
+  string sha256_hash = 5;
+  VectorClock version = 6;
+}
+
+message WriteChunkResponse {
+  bool success = 1;
+  string chunk_id = 2;
+  string error_message = 3;
+}
+
+message ReadChunkRequest {
+  string object_id = 1;
+  string chunk_id = 2;
+}
+
+message ReadChunkResponse {
+  bool success = 1;
+  bytes data = 2;
+  string sha256_hash = 3;
+  VectorClock version = 4;
+  bool is_corrupted = 5;
+}
+
+message VerifyHashRequest {
+  string chunk_id = 1;
+  string expected_sha256 = 2;
+}
+
+message VerifyHashResponse {
+  bool is_valid = 1;
+  string computed_sha256 = 2;
+}
+
+message HeartbeatRequest {
+  string node_id = 1;
+  int64 timestamp = 2;
+}
+
+message HeartbeatResponse {
+  string status = 1;
+  uint64 available_capacity_bytes = 2;
+}
+
+message RebalanceRequest {
+  string chunk_id = 1;
+  string source_node_id = 2;
+  string target_node_id = 3;
+}
+
+message RebalanceResponse {
+  bool success = 1;
+  string message = 2;
+}

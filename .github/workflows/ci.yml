@@ -1,0 +1,41 @@
+name: Vault CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r backend/requirements.txt
+
+    - name: Run Backend Health & Module Syntax Checks
+      run: |
+        python -c "import sys; print('Python Runtime OK:', sys.version)"
+        python -c "from backend.cluster import VaultCluster; c = VaultCluster(5); print('Cluster initialized:', len(c.nodes), 'nodes')"
+        python -c "from backend.auth import VaultAuthManager; a = VaultAuthManager(); print('Auth Engine initialized:', len(a.users), 'seed users')"
+        python -c "from backend.merkle_engine import MerkleTreeEngine; print('Merkle Engine OK')"
+
+  docker-build:
+    needs: test-and-lint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Build Docker Image
+      run: |
+        docker build -t vault-storage:latest ./backend
