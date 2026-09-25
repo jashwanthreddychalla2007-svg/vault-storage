@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vault — Complete Product, Architecture & Operational Guide</title>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      body { background-color: #ffffff !important; color: #000000 !important; font-size: 11pt; }
+      .page-break { page-break-before: always; }
+      a { color: #000000; text-decoration: underline; }
+      .card { border: 1px solid #ccc !important; background: #f9f9f9 !important; }
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #1e293b;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 40px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 50px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      border: 1px solid #e2e8f0;
+    }
+    .header {
+      border-b: 2px solid #0284c7;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    h1 { color: #0f172a; margin: 0; font-size: 26px; }
+    .subtitle { color: #64748b; font-size: 14px; margin-top: 5px; }
+    h2 { color: #0369a1; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-top: 35px; font-size: 18px; }
+    h3 { color: #0f172a; margin-top: 25px; font-size: 15px; }
+    p, li { font-size: 14px; color: #334155; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 10px 12px;
+      text-align: left;
+    }
+    th { background-color: #f1f5f9; color: #0f172a; font-weight: 600; }
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      background-color: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    pre {
+      padding: 15px;
+      overflow-x: auto;
+      border: 1px solid #e2e8f0;
+    }
+    .print-btn {
+      background-color: #0284c7;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .print-btn:hover { background-color: #0369a1; }
+    .alert-box {
+      background-color: #fff7ed;
+      border-left: 4px solid #f97316;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 0 6px 6px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <div class="header">
+      <div>
+        <h1>🛡️ VAULT — Product & Operational Manual</h1>
+        <div class="subtitle">Enterprise Fault-Tolerant Distributed Object Storage Engine v2.0</div>
+      </div>
+      <button onclick="window.print()" class="print-btn no-print">🖨️ Save / Print as PDF</button>
+    </div>
+
+    <section>
+      <h2>1. Overview & Core Architecture</h2>
+      <p><strong>Vault</strong> is an enterprise-grade, fault-tolerant distributed object storage engine and live management console inspired by <strong>Ceph RADOS</strong>, <strong>MinIO</strong>, <strong>AWS S3</strong>, and <strong>Google File System (GFS)</strong>.</p>
+      <p>Vault guarantees zero data loss, silent bitrot healing, and strict multi-tenant authorization over unreliable physical hardware subject to independent failure modes.</p>
+    </section>
+
+    <section>
+      <h2>2. Key Technical Capabilities</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>System Component</th>
+            <th>Technical Specification</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Quorum & Placement</strong></td>
+            <td>CRUSH rack-aware placement ring (Rack-1, Rack-2, Rack-3); Write Quorum $W=2$, Read Quorum $R=2$, Replicas $N=3$.</td>
+          </tr>
+          <tr>
+            <td><strong>Data Integrity</strong></td>
+            <td>SHA-256 Merkle tree leaves with background anti-entropy scrub sweeps and silent bitrot healing.</td>
+          </tr>
+          <tr>
+            <td><strong>AWS S3 Gateway</strong></td>
+            <td>Native S3 REST headers, AWS IAM JSON policy evaluator, and SDK code generators (Python boto3, AWS CLI, Node.js, Go, Curl).</td>
+          </tr>
+          <tr>
+            <td><strong>Identity & RBAC</strong></td>
+            <td>6 explicit OWASP roles (Platform Owner, Org Owner, Admin, Storage Operator, Developer, Viewer) with server-side 403 Forbidden enforcement.</td>
+          </tr>
+          <tr>
+            <td><strong>Observability</strong></td>
+            <td>Real-time TTFB, P50/P95/P99 latency micro-benchmarks, S.M.A.R.T ML node evacuation, and Raft consensus logs.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <div class="page-break"></div>
+
+    <section>
+      <h2>3. Real-World Industry Applications</h2>
+      <ul>
+        <li><strong>Enterprise Private Cloud Storage:</strong> High-performance self-hosted blob storage alternative to AWS S3.</li>
+        <li><strong>Disaster Recovery & High Availability:</strong> Multi-rack data replication eliminating single points of failure.</li>
+        <li><strong>Regulatory & Financial Compliance:</strong> Immutable cryptographic Merkle audit trails preventing silent data modification.</li>
+        <li><strong>Edge & Defense Infrastructure:</strong> Resilience over flaky, high-latency, or air-gapped network nodes.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>4. Step-by-Step Operational & Safety Guide</h2>
+      
+      <h3>Step 1: Role Authorization Testing</h3>
+      <p>Use the <strong>Role Guard</strong> dropdown in the upper right. Select <code>Platform Owner</code> for administrative chaos access, or <code>Viewer</code>/<code>Developer</code> to test live server-side <code>403 Forbidden</code> access guards.</p>
+
+      <h3>Step 2: Safe Chaos Failure Simulation</h3>
+      <div class="alert-box">
+        <strong>Caution:</strong> Failure simulations temporarily degrade cluster redundancy to verify self-healing behavior.
+      </div>
+      <ol>
+        <li>Upload a file on the <strong>STORAGE & S3 IAM</strong> tab and note its replica locations.</li>
+        <li>Switch to <strong>OPERATIONS & CHAOS</strong> and click <code>FAIL</code> on an active node.</li>
+        <li>Verify the object remains retrievable via surviving replicas.</li>
+        <li>Observe the background anti-entropy scrubber auto-repair missing blocks back to 3 replicas.</li>
+      </ol>
+
+      <h3>Step 3: Bitrot Injection & Merkle Tree Inspection</h3>
+      <ol>
+        <li>Click <code>BITROT</code> on a node in the Operations tab.</li>
+        <li>Switch to <strong>MERKLE & INTEGRITY</strong> and click <code>Inspect Object Merkle Graph</code>.</li>
+        <li>Review the exact byte offset and chunk index of corrupted bits identified by SHA-256 leaf comparison.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>5. Deployment & System URLs</h2>
+      <p><strong>GitHub Repository:</strong> <a href="https://github.com/jashwanthreddychalla2007-svg/vault-storage">github.com/jashwanthreddychalla2007-svg/vault-storage</a></p>
+      <p><strong>Live Console URL:</strong> <a href="https://jashwanthreddychalla2007-svg.github.io/vault-storage/">jashwanthreddychalla2007-svg.github.io/vault-storage/</a></p>
+    </section>
+
+    <div style="margin-top: 40px; border-t: 1px solid #e2e8f0; padding-top: 15px; font-size: 11px; color: #94a3b8; text-align: center;">
+      Vault Distributed Storage Engine v2.0 • Generated for Hackathon Submission
+    </div>
+
+  </div>
+
+</body>
+</html>
