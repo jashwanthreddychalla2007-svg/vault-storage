@@ -1,8 +1,9 @@
 import asyncio
 import json
+import os
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, WebSocket, WebSocketDisconnect, Header
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response, HTMLResponse
+from fastapi.responses import Response, HTMLResponse, FileResponse
 from typing import List, Optional, Dict, Any
 
 from cluster import VaultCluster
@@ -87,6 +88,16 @@ def verify_role_permission(user_role: str, required_perm: str, actor_id: str, or
             status_code=403, 
             detail=f"403 Forbidden: Role '{user_role}' lacks permission '{required_perm}'"
         )
+
+
+# Serve root UI directly from Render / Docker backend
+@app.get("/", response_class=HTMLResponse)
+def serve_root_ui():
+    root_index = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "index.html"))
+    if os.path.exists(root_index):
+        with open(root_index, "r", encoding="utf-8") as f:
+            return f.read()
+    return "<h1>Vault API Online</h1>"
 
 
 @app.get("/health")
@@ -201,7 +212,6 @@ def inspect_bitrot_diff(object_id: str):
         raise HTTPException(status_code=404, detail="Object not found")
     obj = cluster.objects[object_id]
     original = obj["payload_sample"]
-    # Create simulated corrupt payload for diff inspection
     corrupted = bytearray(original)
     if len(corrupted) > 4:
         corrupted[3] = (corrupted[3] + 1) % 256
