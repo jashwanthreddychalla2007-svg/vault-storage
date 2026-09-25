@@ -33,7 +33,6 @@
 </head>
 <body class="min-h-screen flex flex-col antialiased">
   
-  <!-- TOP HEADER NAVBAR -->
   <header class="border-b border-vaultBorder bg-[#0D121F] px-6 py-3 flex items-center justify-between sticky top-0 z-40">
     <div class="flex items-center gap-6">
       <div class="flex items-center gap-3">
@@ -42,13 +41,11 @@
         <span class="text-xs px-2 py-0.5 rounded bg-vaultCyan/10 text-vaultCyan border border-vaultCyan/30 font-semibold">ENTERPRISE v2.0</span>
       </div>
 
-      <!-- WORKSPACE SELECTOR -->
       <div class="flex items-center gap-2 bg-[#161F30] border border-vaultBorder px-3 py-1.5 rounded text-xs font-medium text-gray-200">
         <svg class="w-3.5 h-3.5 text-vaultCyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
         <span id="currentOrgName">Vault Labs Enterprise</span>
       </div>
 
-      <!-- 4 MASTER NAVIGATION TABS -->
       <nav class="flex items-center bg-[#131B2A] p-1 rounded border border-vaultBorder text-xs">
         <button id="tabStorage" onclick="switchTab('storage')" class="px-3 py-1.5 rounded font-bold text-vaultCyan bg-[#1F2B3E] transition flex items-center gap-1.5">
           <span>📦</span> STORAGE & S3 IAM
@@ -65,7 +62,6 @@
       </nav>
     </div>
 
-    <!-- USER ROLE TESTER DROPDOWN -->
     <div class="flex items-center gap-4">
       <div class="flex items-center gap-2 bg-[#162032] px-3 py-1.5 rounded border border-vaultBorder text-xs">
         <span class="text-vaultMuted font-mono">Role Guard:</span>
@@ -82,10 +78,8 @@
     </div>
   </header>
 
-  <!-- MAIN CONTAINER -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
 
-    <!-- CLUSTER HEALTH TOP STATS BAR -->
     <section class="grid grid-cols-2 md:grid-cols-5 gap-4">
       <div class="bg-vaultCard border border-vaultBorder rounded p-4">
         <div class="text-[11px] font-mono text-vaultMuted uppercase">Cluster Status</div>
@@ -111,7 +105,6 @@
       </div>
     </section>
 
-    <!-- TAB 1: STORAGE CONSOLE & S3 IAM PLAYGROUND -->
     <div id="viewStorage" class="space-y-6">
       <div class="flex items-center justify-between">
         <div>
@@ -123,7 +116,6 @@
         </button>
       </div>
 
-      <!-- BUCKET CARDS -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-2">
           <div class="flex items-center justify-between">
@@ -150,7 +142,6 @@
         </div>
       </div>
 
-      <!-- UPLOAD & OBJECT TABLE -->
       <div class="bg-vaultCard border border-vaultBorder rounded p-5 space-y-4">
         <div class="flex items-center justify-between border-b border-vaultBorder pb-3">
           <h3 class="font-bold text-white text-sm">Stored Objects & Merkle Digests</h3>
@@ -177,15 +168,12 @@
               </tr>
             </thead>
             <tbody id="objectTableBody" class="divide-y divide-vaultBorder/50 text-gray-300">
-              <!-- Rendered dynamically -->
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- AWS S3 SDK SNIPPETS & IAM POLICY SIMULATOR -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- S3 SDK SNIPPETS -->
         <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-3">
           <div class="flex justify-between items-center border-b border-vaultBorder pb-2">
             <h3 class="font-bold text-white text-xs">AWS S3 SDK Code Snippet Generator</h3>
@@ -200,7 +188,6 @@
           <pre id="snippetBox" class="bg-[#0B0F19] p-3 rounded text-[11px] code-font text-vaultCyan overflow-x-auto border border-vaultBorder h-48"></pre>
         </div>
 
-        <!-- IAM POLICY EVALUATOR -->
         <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-3">
           <div class="border-b border-vaultBorder pb-2">
             <h3 class="font-bold text-white text-xs">AWS S3 IAM JSON Policy Evaluator</h3>
@@ -223,7 +210,6 @@
       </div>
     </div>
 
-    <!-- TAB 2: OPERATIONS & CHAOS ENGINE -->
     <div id="viewOps" class="space-y-6 hidden">
       <div class="flex items-center justify-between">
         <div>
@@ -235,12 +221,9 @@
         </button>
       </div>
 
-      <!-- NODE TOPOLOGY GRID -->
       <div id="nodeGrid" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <!-- Rendered dynamically -->
       </div>
 
-      <!-- EVENT & SECURITY AUDIT STREAMS -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-vaultCard border border-vaultBorder rounded p-4 font-mono text-xs space-y-2">
           <div class="text-vaultMuted flex justify-between border-b border-vaultBorder pb-2">
@@ -260,7 +243,6 @@
       </div>
     </div>
 
-    <!-- TAB 3: MERKLE TREE & INTEGRITY INSPECTOR -->
     <div id="viewMerkle" class="space-y-6 hidden">
       <div class="flex items-center justify-between">
         <div>
@@ -273,13 +255,11 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- MERKLE TREE DISPLAY -->
         <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-3">
           <h3 class="font-bold text-white text-xs border-b border-vaultBorder pb-2">Merkle Hash Tree Visualizer</h3>
           <pre id="merkleTreeBox" class="bg-[#0B0F19] p-3 rounded text-[11px] code-font text-vaultCyan overflow-x-auto border border-vaultBorder h-64">Click "Inspect Object Merkle Graph" to view structural tree digest.</pre>
         </div>
 
-        <!-- BITROT BYTE OFFSET DIFF INSPECTOR -->
         <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-3">
           <h3 class="font-bold text-white text-xs border-b border-vaultBorder pb-2">Bitrot Byte-Level Corrupted Block Diff</h3>
           <pre id="bitrotDiffBox" class="bg-[#0B0F19] p-3 rounded text-[11px] code-font text-vaultRed overflow-x-auto border border-vaultBorder h-64">Click "Inspect Object Merkle Graph" to scan byte diffs.</pre>
@@ -287,7 +267,6 @@
       </div>
     </div>
 
-    <!-- TAB 4: BENCHMARK & RAFT CONSENSUS LAB -->
     <div id="viewBench" class="space-y-6 hidden">
       <div class="flex items-center justify-between">
         <div>
@@ -300,7 +279,6 @@
         </div>
       </div>
 
-      <!-- BENCHMARK RESULTS -->
       <div id="benchResultsBox" class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-vaultCard border border-vaultBorder rounded p-4">
           <div class="text-xs font-mono text-vaultMuted">TTFB (Time to First Byte)</div>
@@ -320,7 +298,6 @@
         </div>
       </div>
 
-      <!-- RAFT LOG ENTRIES -->
       <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-3 font-mono text-xs">
         <h3 class="font-bold text-white border-b border-vaultBorder pb-2">Raft Metadata Replicas Consensus Log Entries</h3>
         <div id="raftLogBox" class="h-48 overflow-y-auto space-y-1 text-gray-300"></div>
@@ -328,8 +305,6 @@
     </div>
 
   </main>
-
-  <!-- MODALS -->
 
   <div id="authModal" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden z-50">
     <div class="bg-[#0F141C] border border-[#202A36] rounded-lg p-6 max-w-md w-full space-y-4 shadow-2xl">
@@ -367,7 +342,6 @@
     </div>
   </div>
 
-  <!-- SCRIPT LOGIC -->
   <script>
     let activeRole = "platform_owner";
     let activeUserId = "usr_owner";
@@ -393,7 +367,7 @@
 
     async function fetchClusterStatus() {
       try {
-        const res = await fetch('http://localhost:8000/api/v1/cluster/status');
+        const res = await fetch('/api/v1/cluster/status');
         const data = await res.json();
         
         document.getElementById('statNodes').innerText = `${data.nodes.filter(n => n.status === 'ONLINE').length} / ${data.nodes.length}`;
@@ -406,7 +380,7 @@
         renderLogs(data.event_logs || []);
         renderRaftLogs(data.raft_state.log_entries || []);
       } catch (err) {
-        console.error("Failed connecting to Vault backend", err);
+        console.error("Connection error to Vault backend", err);
       }
     }
 
@@ -429,7 +403,7 @@
     }
 
     async function renderObjects() {
-      const res = await fetch('http://localhost:8000/api/v1/objects');
+      const res = await fetch('/api/v1/objects');
       const objects = await res.json();
       const tbody = document.getElementById('objectTableBody');
 
@@ -449,7 +423,7 @@
     }
 
     async function loadS3Snippets() {
-      const res = await fetch('http://localhost:8000/api/v1/s3/snippets');
+      const res = await fetch('/api/v1/s3/snippets');
       sdkSnippets = await res.json();
       const lang = document.getElementById('sdkLangSelect').value;
       document.getElementById('snippetBox').innerText = sdkSnippets[lang] || sdkSnippets['curl'];
@@ -465,7 +439,7 @@
       formData.append('action', act);
       formData.append('resource', res);
 
-      const r = await fetch('http://localhost:8000/api/v1/iam/evaluate', { method: 'POST', body: formData });
+      const r = await fetch('/api/v1/iam/evaluate', { method: 'POST', body: formData });
       const data = await r.json();
       const box = document.getElementById('iamResult');
       if (data.decision === 'ALLOW') {
@@ -479,23 +453,23 @@
 
     async function inspectMerkle(objectId) {
       switchTab('merkle');
-      const rTree = await fetch(`http://localhost:8000/api/v1/merkle/inspect/${objectId}`);
+      const rTree = await fetch(`/api/v1/merkle/inspect/${objectId}`);
       const dTree = await rTree.json();
       document.getElementById('merkleTreeBox').innerText = JSON.stringify(dTree.merkle_tree, null, 2);
 
-      const rDiff = await fetch(`http://localhost:8000/api/v1/merkle/bitrot-diff/${objectId}`);
+      const rDiff = await fetch(`/api/v1/merkle/bitrot-diff/${objectId}`);
       const dDiff = await rDiff.json();
       document.getElementById('bitrotDiffBox').innerText = JSON.stringify(dDiff.diff_inspection, null, 2);
     }
 
     async function inspectMerkleForFirstObject() {
-      const res = await fetch('http://localhost:8000/api/v1/objects');
+      const res = await fetch('/api/v1/objects');
       const objs = await res.json();
       if (objs.length > 0) inspectMerkle(objs[0].id);
     }
 
     async function runBenchmark() {
-      const res = await fetch('http://localhost:8000/api/v1/benchmark/run');
+      const res = await fetch('/api/v1/benchmark/run');
       const data = await res.json();
       document.getElementById('benchTtfb').innerText = `${data.time_to_first_byte_ms} ms`;
       document.getElementById('benchP50').innerText = `${data.read_latency.p50} ms`;
@@ -504,7 +478,7 @@
     }
 
     async function triggerRaftElection() {
-      const res = await fetch('http://localhost:8000/api/v1/raft/election', { method: 'POST' });
+      const res = await fetch('/api/v1/raft/election', { method: 'POST' });
       fetchClusterStatus();
     }
 
@@ -537,42 +511,42 @@
     async function killNode(nodeId) {
       const formData = new FormData();
       formData.append('node_id', nodeId);
-      const res = await fetch('http://localhost:8000/api/v1/chaos/kill-node', {
+      const res = await fetch('/api/v1/chaos/kill-node', {
         method: 'POST',
         headers: { 'x-user-role': activeRole, 'x-user-id': activeUserId },
         body: formData
       });
-      if (res.status === 403) alert("403 Forbidden: Active role (" + activeRole + ") lacks chaos execution permission!");
+      if (res.status === 403) alert("403 Forbidden: Role " + activeRole + " lacks chaos execution permission");
       fetchClusterStatus();
     }
 
     async function injectBitrot(nodeId) {
       const formData = new FormData();
       formData.append('node_id', nodeId);
-      const res = await fetch('http://localhost:8000/api/v1/chaos/bitrot', {
+      const res = await fetch('/api/v1/chaos/bitrot', {
         method: 'POST',
         headers: { 'x-user-role': activeRole, 'x-user-id': activeUserId },
         body: formData
       });
-      if (res.status === 403) alert("403 Forbidden: Active role (" + activeRole + ") lacks bitrot injection permission!");
+      if (res.status === 403) alert("403 Forbidden: Role " + activeRole + " lacks bitrot permission");
       fetchClusterStatus();
     }
 
     async function triggerRecover() {
-      const res = await fetch('http://localhost:8000/api/v1/chaos/recover', {
+      const res = await fetch('/api/v1/chaos/recover', {
         method: 'POST',
         headers: { 'x-user-role': activeRole, 'x-user-id': activeUserId }
       });
-      if (res.status === 403) alert("403 Forbidden: Active role (" + activeRole + ") cannot trigger cluster recovery!");
+      if (res.status === 403) alert("403 Forbidden: Role " + activeRole + " cannot trigger recovery");
       fetchClusterStatus();
     }
 
     async function downloadObject(objectId) {
-      const res = await fetch(`http://localhost:8000/api/v1/objects/${objectId}/download`, {
+      const res = await fetch(`/api/v1/objects/${objectId}/download`, {
         headers: { 'x-user-role': activeRole, 'x-user-id': activeUserId }
       });
       if (res.status === 403) {
-        alert("403 Forbidden: Active role (" + activeRole + ") cannot download objects!");
+        alert("403 Forbidden: Role " + activeRole + " cannot download objects");
         return;
       }
       const blob = await res.blob();
@@ -591,14 +565,14 @@
       formData.append('file', file);
       formData.append('policy', policy);
 
-      const res = await fetch('http://localhost:8000/api/v1/objects/upload', {
+      const res = await fetch('/api/v1/objects/upload', {
         method: 'POST',
         headers: { 'x-user-role': activeRole, 'x-user-id': activeUserId },
         body: formData
       });
 
       if (res.status === 403) {
-        alert("403 Forbidden: Active role (" + activeRole + ") is not allowed to upload files!");
+        alert("403 Forbidden: Role " + activeRole + " is not allowed to upload files");
         return;
       }
       fetchClusterStatus();
@@ -612,7 +586,7 @@
       formData.append('email', email);
       formData.append('password', password);
 
-      const res = await fetch('http://localhost:8000/api/v1/auth/login', { method: 'POST', body: formData });
+      const res = await fetch('/api/v1/auth/login', { method: 'POST', body: formData });
       const data = await res.json();
       if (res.ok) {
         document.getElementById('authResponse').innerText = `Authenticated: ${data.user.display_name} (${data.current_role})`;
@@ -624,7 +598,9 @@
       }
     };
 
-    const ws = new WebSocket('ws://localhost:8000/ws/telemetry');
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsHost = window.location.host || 'localhost:8000';
+    const ws = new WebSocket(`${wsProtocol}//${wsHost}/ws/telemetry`);
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       document.getElementById('statScrubs').innerText = data.scrubber_metrics.scrub_count;
