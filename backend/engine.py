@@ -10,6 +10,12 @@ from database import get_db
 
 STORAGE_BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "storage"))
 
+def sanitize_filename(filename: str) -> str:
+    """Blocks path traversal attacks by extracting safe basename."""
+    clean = os.path.basename(filename.replace("\\", "/"))
+    clean = clean.replace("..", "").strip()
+    return clean or "unnamed_object"
+
 class StorageClusterEngine:
     """Core distributed storage engine implementing 6-Node, 2-Zone placement, chunking, auto-repair, and bitrot healing."""
 
@@ -61,8 +67,19 @@ class StorageClusterEngine:
 
         return selected[:replication_factor]
 
-    def upload_object(self, user_id: str, bucket_name: str, object_name: str, payload: bytes, mime_type: str = "application/octet-stream", replication_factor: int = 3, chunk_size: int = 65536) -> Dict[str, Any]:
+    def upload_object(
+        self, 
+        user_id: str, 
+        bucket_name: str, 
+        object_name: str, 
+        payload: bytes, 
+        mime_type: str = "application/octet-stream", 
+        replication_factor: int = 3, 
+        chunk_size: int = 65536,
+        expected_version: Optional[int] = None
+    ) -> Dict[str, Any]:
         """Uploads object: calculates SHA-256, splits into chunks, writes replicas across 6 nodes, commits metadata."""
+        safe_name = sanitize_filename(object_name)
         conn = get_db()
         cursor = conn.cursor()
 
@@ -77,21 +94,31 @@ class StorageClusterEngine:
 
         now = time.time()
 
-        cursor.execute("SELECT id, latest_version FROM objects WHERE bucket_id = ? AND name = ?;", (bkt_id, object_name))
+        cursor.execute("SELECT id, latest_version FROM objects WHERE bucket_id = ? AND name = ?;", (bkt_id, safe_name))
         obj_row = cursor.fetchone()
 
         if obj_row:
             obj_id = obj_row["id"]
-            new_version = obj_row["latest_version"] + 1
+            current_ver = obj_row["latest_version"]
+            
+            # Check optimistic concurrency
+            if expected_version is not None and expected_version != current_ver:
+                conn.close()
+                raise ValueError(f"409 Conflict: Expected version {expected_version}, but latest version is {current_ver}")
+                
+            new_version = current_ver + 1
             cursor.execute("UPDATE objects SET latest_version = ?, size = ?, state = 'HEALTHY', updated_at = ? WHERE id = ?;",
                            (new_version, len(payload), now, obj_id))
         else:
+            if expected_version is not None and expected_version > 1:
+                conn.close()
+                raise ValueError(f"409 Conflict: Object does not exist, expected version {expected_version}")
             obj_id = f"obj_{secrets.token_hex(6)}"
             new_version = 1
             cursor.execute("""
             INSERT INTO objects (id, bucket_id, owner_id, name, size, mime_type, latest_version, state, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-            """, (obj_id, bkt_id, user_id, object_name, len(payload), mime_type, 1, 'HEALTHY', now, now))
+            """, (obj_id, bkt_id, user_id, safe_name, len(payload), mime_type, 1, 'HEALTHY', now, now))
 
         overall_checksum = hashlib.sha256(payload).hexdigest()
 
@@ -103,7 +130,7 @@ class StorageClusterEngine:
 
         nodes = self.select_placement_nodes(replication_factor)
 
-        chunks = [payload[i:i + chunk_size] for i in range(0, len(payload), chunk_size)]
+        chunks = [payload[i:i + chunk_size] for i in range(0, len(payload), chunk_size)] if payload else [b""]
         chunk_manifest = []
 
         for idx, chk in enumerate(chunks):
@@ -135,12 +162,12 @@ class StorageClusterEngine:
         conn.commit()
         conn.close()
 
-        self.log_event("INFO", "OBJECT_UPLOAD", f"Uploaded object {object_name} (v{new_version}, {len(payload)} bytes) with RF={replication_factor}", object_id=obj_id)
+        self.log_event("INFO", "OBJECT_UPLOAD", f"Uploaded object {safe_name} (v{new_version}, {len(payload)} bytes) with RF={replication_factor}", object_id=obj_id)
 
         return {
             "object_id": obj_id,
             "version": new_version,
-            "name": object_name,
+            "name": safe_name,
             "size_bytes": len(payload),
             "checksum": overall_checksum,
             "replicas": [{"node_id": n["id"], "zone": n["zone"]} for n in nodes]
@@ -219,6 +246,7 @@ class StorageClusterEngine:
 
                 payload = b"".join(chunks_data)
                 if hashlib.sha256(payload).hexdigest() == expected_checksum:
+                    self.log_event("INFO", "OBJECT_DOWNLOAD", f"Downloaded object {object_id} (v{target_ver}) from Node-{node_id}", node_id=node_id, object_id=object_id)
                     return payload, repaired
 
             except Exception:
@@ -264,7 +292,7 @@ class StorageClusterEngine:
 
     def _execute_repair_job(self, job_id: str, object_id: str, target_node: int):
         """Transfers data chunks, verifies SHA-256 checksum, updates metadata, and restores HEALTHY status."""
-        time.sleep(1.5)
+        time.sleep(0.2)
         conn = get_db()
         cursor = conn.cursor()
 
@@ -342,10 +370,12 @@ class StorageClusterEngine:
 
         for obj_id in affected:
             cursor.execute("UPDATE objects SET state = 'DEGRADED' WHERE id = ?;", (obj_id,))
-            self.schedule_repair_job(obj_id, source_node=node_id, reason="NODE_FAILURE_HARDWARE_CRASH")
 
         conn.commit()
         conn.close()
+
+        for obj_id in affected:
+            self.schedule_repair_job(obj_id, source_node=node_id, reason="NODE_FAILURE_HARDWARE_CRASH")
 
         self.log_event("CRITICAL", "NODE_FAILURE", f"Storage Node-{node_id} failed! {len(affected)} objects degraded. Auto-repair queued.", node_id=node_id)
         return {"node_id": node_id, "status": "FAILED", "affected_objects": len(affected)}
@@ -460,6 +490,35 @@ class StorageClusterEngine:
 
         self.log_event("INFO", "OBJECT_DELETED", f"Created Tombstone v{next_ver} for object {object_id}", object_id=object_id)
         return {"object_id": object_id, "deleted_version": next_ver, "status": "TOMBSTONE_CREATED"}
+
+    def reset_test_cluster(self):
+        """Cleans all test objects, versions, replicas, repair jobs, events, and non-default users without affecting schema."""
+        for _ in range(5):
+            try:
+                conn = get_db()
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM object_replicas;")
+                cursor.execute("DELETE FROM object_versions;")
+                cursor.execute("DELETE FROM objects;")
+                cursor.execute("DELETE FROM repair_jobs;")
+                cursor.execute("DELETE FROM events;")
+                cursor.execute("DELETE FROM users WHERE email NOT IN ('admin@vault.io', 'dev@vault.io', 'user@vault.io');")
+                cursor.execute("UPDATE storage_nodes SET status = 'HEALTHY', used_storage = 0;")
+                conn.commit()
+                conn.close()
+                break
+            except Exception:
+                time.sleep(0.1)
+
+        # Clean storage node disk files
+        for i in range(1, 7):
+            node_dir = os.path.join(self.storage_base, f"node{i}", "objects")
+            if os.path.exists(node_dir):
+                try:
+                    shutil.rmtree(node_dir)
+                except Exception:
+                    pass
+            os.makedirs(node_dir, exist_ok=True)
 
     def get_cluster_status(self) -> Dict[str, Any]:
         """Returns comprehensive cluster metrics, 6-node state, zone information, repair jobs, and events."""

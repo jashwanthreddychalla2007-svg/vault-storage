@@ -6,15 +6,20 @@ import secrets
 import hashlib
 from typing import Dict, List, Any, Optional
 
-DB_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "database.db"))
+DB_FILE = os.environ.get("VAULT_DB_FILE") or os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "database.db"))
 
 def get_db():
-    conn = sqlite3.connect(DB_FILE)
+    target_db = os.environ.get("VAULT_DB_FILE") or DB_FILE
+    conn = sqlite3.connect(target_db, timeout=30.0)
     conn.row_factory = sqlite3.Row
     return conn
 
 def init_db():
     conn = get_db()
+    try:
+        conn.execute("PRAGMA journal_mode=WAL;")
+    except Exception:
+        pass
     cursor = conn.cursor()
 
     # 1. Users
@@ -168,7 +173,7 @@ def init_db():
     cursor.execute("SELECT COUNT(*) FROM users;")
     if cursor.fetchone()[0] == 0:
         now = time.time()
-        pw_hash = hashlib.sha256("AdminVault2026!Secure".encode()).hexdigest()
+        pw_hash = hashlib.sha256(("AdminVault2026!Secure" + "vault_salt_2026").encode()).hexdigest()
         admin_id = "usr_admin_001"
         user_id = "usr_dev_002"
         cursor.execute("INSERT INTO users (id, name, email, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?, ?);",
