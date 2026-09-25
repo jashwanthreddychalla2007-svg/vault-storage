@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Vault — Master Presentation Deck & PDF Report</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: #080B12; color: #E5E7EB; font-family: 'Inter', sans-serif; line-height: 1.5; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* SLIDE LAYOUT */
+    .slide {
+      width: 100%;
+      max-width: 1100px;
+      min-height: 650px;
+      margin: 40px auto;
+      background-color: #0F141C;
+      border: 1px solid #202A36;
+      border-radius: 12px;
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      page-break-after: always;
+      position: relative;
+    }
+
+    .slide-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #202A36; padding-bottom: 16px; margin-bottom: 24px; }
+    .slide-title { font-size: 24px; font-weight: 800; color: #FFFFFF; display: flex; align-items: center; gap: 12px; }
+    .slide-tag { font-size: 11px; font-family: 'JetBrains Mono', monospace; background: rgba(56, 189, 248, 0.1); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 4px 10px; border-radius: 4px; }
+
+    .slide-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 20px; }
+    .slide-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #202A36; padding-top: 16px; margin-top: 24px; font-size: 11px; color: #9CA3AF; font-family: 'JetBrains Mono', monospace; }
+
+    /* CARDS & GRIDS */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+    .card { background: #161F2E; border: 1px solid #202A36; padding: 20px; border-radius: 8px; }
+    .card-title { font-size: 14px; font-weight: 700; color: #38BDF8; margin-bottom: 8px; }
+    .card-desc { font-size: 12px; color: #9CA3AF; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .badge-green { background: rgba(34, 197, 94, 0.15); color: #22C55E; border: 1px solid rgba(34, 197, 94, 0.4); }
+    .badge-red { background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.4); }
+    .badge-cyan { background: rgba(56, 189, 248, 0.15); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.4); }
+
+    /* COVER SLIDE */
+    .cover-slide { text-align: center; justify-content: center; align-items: center; background: linear-gradient(180deg, #0F141C 0%, #080B12 100%); }
+    .cover-title { font-size: 48px; font-weight: 900; color: #FFFFFF; letter-spacing: -1px; margin-bottom: 12px; }
+    .cover-subtitle { font-size: 18px; color: #38BDF8; font-weight: 600; margin-bottom: 24px; }
+    .cover-desc { font-size: 14px; color: #9CA3AF; max-width: 650px; margin: 0 auto 32px auto; }
+
+    /* PRINT FORMATTING FOR PDF EXPORT */
+    @media print {
+      body { background-color: #FFFFFF; color: #000000; }
+      .slide {
+        max-width: 100%;
+        margin: 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        background-color: #0F141C !important;
+        color: #E5E7EB !important;
+        min-height: 100vh;
+      }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PRINT TOOLBAR -->
+  <div class="no-print" style="position: sticky; top: 0; z-index: 100; background: #0D121F; border-bottom: 1px solid #202A36; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center;">
+    <div style="font-weight: 700; font-size: 14px; color: #38BDF8;">🛡️ Vault Presentation Deck & PDF Generator</div>
+    <button onclick="window.print()" style="background: #38BDF8; color: #080B12; font-weight: 800; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px;">🖨️ Save as PDF / Print Slides (Ctrl + P)</button>
+  </div>
+
+  <!-- SLIDE 1: COVER SLIDE -->
+  <div class="slide cover-slide">
+    <div style="font-size: 12px; font-family: 'JetBrains Mono', monospace; color: #38BDF8; margin-bottom: 16px;">PROMPT-A-THON HACKATHON MASTER SUBMISSION</div>
+    <h1 class="cover-title">VAULT</h1>
+    <div class="cover-subtitle">Enterprise Fault-Tolerant Distributed Object Storage Engine</div>
+    <p class="cover-desc">Store data. Survive unannounced server failures. Repair silent bitrot automatically within 5 seconds.</p>
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <span class="badge badge-cyan">Python 3.12 / FastAPI</span>
+      <span class="badge badge-green">SHA-256 Merkle Trees</span>
+      <span class="badge badge-cyan">AWS S3 API Gateway</span>
+      <span class="badge badge-green">OWASP Multi-Tenant RBAC</span>
+    </div>
+    <div class="slide-footer">
+      <span>Vault v2.0 Platform Release</span>
+      <span>jashwanthreddychalla2007-svg/vault-storage</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: PROBLEM STATEMENT -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title"><span>❓</span> The Problem Statement: Hardware Unreliability</div>
+      <span class="slide-tag">PART 1: INDUSTRY REALITY</span>
+    </div>
+    <div class="slide-body">
+      <p style="font-size: 14px; color: #9CA3AF;">Physical storage servers (HDDs, NVMe SSDs) in data centers fail every single day. Traditional single-server storage setups lead to catastrophic business data loss.</p>
+      <div class="grid-2">
+        <div class="card" style="border-left: 4px solid #F87171;">
+          <div class="card-title" style="color: #F87171;">1. Unannounced Server Crashes</div>
+          <div class="card-desc">Hard drives overheat, power supplies explode, or network cards fail. If files sit on a single server that dies, business data is lost forever.</div>
+        </div>
+        <div class="card" style="border-left: 4px solid #F59E0B;">
+          <div class="card-title" style="color: #F59E0B;">2. Silent Bitrot Data Corruption</div>
+          <div class="card-desc">Magnetic layers on physical disks naturally decay over time (bits flip from 1 to 0). Files corrupt silently without triggering drive alerts.</div>
+        </div>
+        <div class="card" style="border-left: 4px solid #F87171;">
+          <div class="card-title" style="color: #F87171;">3. Single Point of Failure</div>
+          <div class="card-desc">Storing files on one physical server rack means a single power outage or cable disconnect takes down the entire application.</div>
+        </div>
+        <div class="card" style="border-left: 4px solid #38BDF8;">
+          <div class="card-title" style="color: #38BDF8;">4. Unpermitted Security Leakage</div>
+          <div class="card-desc">Without strict server-side multi-tenant authorization, unauthorized API requests or users can inspect or delete restricted files.</div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Vault Presentation Deck</span>
+      <span>Slide 2 of 8</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: THE SOLUTION -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title"><span>💡</span> The Solution: Vault Self-Healing Engine</div>
+      <span class="slide-tag">PART 2: VAULT ARCHITECTURE</span>
+    </div>
+    <div class="slide-body">
+      <p style="font-size: 14px; color: #9CA3AF;">Vault turns a cluster of cheap, unreliable physical storage nodes into a 100% durable, self-healing data fortress.</p>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-title">Multi-Rack Replication</div>
+          <div class="card-desc">Duplicates payloads across 3 independent physical racks (<span class="mono">rack-1</span>, <span class="mono">rack-2</span>, <span class="mono">rack-3</span>) to survive full rack outages.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Anti-Entropy Auto-Repair</div>
+          <div class="card-desc">Background scrubber sweeps every 5 seconds, detects missing or bitrot-corrupted blocks, and re-replicates clean copies automatically.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Quorum Consensus</div>
+          <div class="card-desc">Enforces <span class="mono">W + R > N</span> quorum rules (<span class="mono">N=3, W=2, R=2</span>) to prevent write skew and split-brain reads during network latency.</div>
+        </div>
+      </div>
+      <div class="card" style="background: #0B0F19; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #38BDF8;">
+        [Upload Payload] -> SHA-256 Merkle Root Digest -> CRUSH Rack Allocator -> Write Quorum Confirmed (201 Created)
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Vault Presentation Deck</span>
+      <span>Slide 3 of 8</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: CAUSAL LIFECYCLE -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title"><span>🔄</span> Causal Life Cycle of a File in Vault</div>
+      <span class="slide-tag">PART 3: STEP-BY-STEP FLOW</span>
+    </div>
+    <div class="slide-body">
+      <div class="card" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.8;">
+        <div style="color: #38BDF8; font-weight: 700;">1. UPLOAD PHASE:</div>
+        <div style="color: #9CA3AF; padding-left: 16px;">User uploads file -> SHA-256 Merkle hash calculated -> Placed on Node-1 (Rack 1), Node-3 (Rack 2), Node-5 (Rack 3).</div>
+        
+        <div style="color: #F87171; font-weight: 700; margin-top: 8px;">2. CHAOS SIMULATION (Node Crash):</div>
+        <div style="color: #9CA3AF; padding-left: 16px;">Node-3 set OFFLINE -> Cluster enters DEGRADED state (2/3 Replicas surviving).</div>
+        
+        <div style="color: #22C55E; font-weight: 700; margin-top: 8px;">3. ZERO-DOWNTIME QUORUM READ:</div>
+        <div style="color: #9CA3AF; padding-left: 16px;">User requests download -> Quorum Read (R >= 2) fetches file from Node-1 & Node-5 -> File downloads perfectly!</div>
+        
+        <div style="color: #14B8A6; font-weight: 700; margin-top: 8px;">4. AUTOMATIC ANTI-ENTROPY REPAIR (5-Second Sweep):</div>
+        <div style="color: #9CA3AF; padding-left: 16px;">Scrubber detects missing replica -> Copies block to Node-2 -> Checks SHA-256 digest -> Restored to 100% HEALTHY!</div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Vault Presentation Deck</span>
+      <span>Slide 4 of 8</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: ADVANCED ENGINES -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title"><span>⚡</span> Advanced Enterprise Feature Suite</div>
+      <span class="slide-tag">PART 4: TECHNICAL CAPABILITIES</span>
+    </div>
+    <div class="slide-body">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">🌳 Merkle Tree & Bitrot Diff Inspector</div>
+          <div class="card-desc">Deconstructs payloads into binary blocks, generating parent SHA-256 tree digests and displaying exact corrupted byte offsets during bitrot events.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">⚡ AWS S3 SDK & IAM Policy Engine</div>
+          <div class="card-desc">Generates code snippets for Python (<span class="mono">boto3</span>), AWS CLI, Node.js, Go, and Curl, plus evaluates AWS JSON policies (<span class="mono">Effect: Allow/Deny</span>).</div>
+        </div>
+        <div class="card">
+          <div class="card-title">🔐 OWASP Multi-Tenant RBAC Guards</div>
+          <div class="card-desc">Enforces 6 explicit roles (<span class="mono">platform_owner</span>, <span class="mono">storage_operator</span>, <span class="mono">developer</span>, etc.) with server-side <span class="mono">403 Forbidden</span> authorization checks.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">📊 Benchmark Lab & Raft Consensus</div>
+          <div class="card-desc">Live synthetic workload runner measuring TTFB, P50/P95/P99 latency percentiles, MB/s throughput, and Raft metadata election logs.</div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Vault Presentation Deck</span>
+      <span>Slide 5 of 8</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: JUDGE DEMO GUIDE -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title"><span>🖥️</span> Live Demo & Click-by-Click Guide for Judges</div>
+      <span class="slide-tag">PART 5: DEMO INSTRUCTIONS</span>
+    </div>
+    <div class="slide-body">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Demo 1: Node Failure & Self-Healing</div>
+          <ol style="font-size: 11px; color: #9CA3AF; padding-left: 16px; line-height: 1.6;">
+            <li>Upload file in <b>STORAGE & S3 IAM</b> tab.</li>
+            <li>Go to <b>OPERATIONS & CHAOS</b> tab -> Click <span class="badge badge-red">FAIL</span> on Node-3.</li>
+            <li>Notice file still downloads via Quorum Read!</li>
+            <li>Observe scrubber auto-repairing missing block within 5s.</li>
+          </ol>
+        </div>
+        <div class="card">
+          <div class="card-title">Demo 2: Bitrot Diff & Security Guard</div>
+          <ol style="font-size: 11px; color: #9CA3AF; padding-left: 16px; line-height: 1.6;">
+            <li>Click <span class="badge badge-red">BITROT</span> on Node-1 in Operations tab.</li>
+            <li>Go to <b>MERKLE & INTEGRITY</b> tab -> Click <b>Inspect Object Merkle Graph</b>.</li>
+            <li>View exact corrupted byte offset in diff inspector.</li>
+            <li>Change Role to <b>Viewer</b> -> Try failing node -> Server blocks with <span class="mono">403 Forbidden</span>!</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Vault Presentation Deck</span>
+      <span>Slide 6 of 8</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: REAL-WORLD APPLICATIONS -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title"><span>🏢</span> Real-World Industry Applications</div>
+      <span class="slide-tag">PART 6: COMMERCIAL USE CASES</span>
+    </div>
+    <div class="slide-body">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Enterprise Cloud Storage</div>
+          <div class="card-desc">Private, self-hosted alternative to AWS S3 / MinIO for enterprises requiring total data governance without cloud lock-in.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Disaster Recovery & High Availability</div>
+          <div class="card-desc">Multi-datacenter replication ensures zero data loss even during physical rack power failures or hardware outages.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Financial & Healthcare Compliance</div>
+          <div class="card-desc">Cryptographic Merkle audit trails and zero-trust bitrot healing satisfy strict legal data integrity rules.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Edge Computing & Defense Systems</div>
+          <div class="card-desc">Reliable object storage operating over flaky, air-gapped, or high-latency network nodes.</div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Vault Presentation Deck</span>
+      <span>Slide 7 of 8</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: DEPLOYMENT & LINKS -->
+  <div class="slide" style="text-align: center;">
+    <div class="slide-header">
+      <div class="slide-title"><span>🚀</span> Live Deployment & Repository Links</div>
+      <span class="slide-tag">PART 8: ACCESS LINKS</span>
+    </div>
+    <div class="slide-body" style="align-items: center; justify-content: center;">
+      <div class="card" style="max-width: 600px; width: 100%; text-align: left; font-family: 'JetBrains Mono', monospace; font-size: 12px;">
+        <div><b>GitHub Codebase:</b></div>
+        <div style="color: #38BDF8; margin-bottom: 12px;">https://github.com/jashwanthreddychalla2007-svg/vault-storage</div>
+        <div><b>Live Web Console (GitHub Pages):</b></div>
+        <div style="color: #22C55E; margin-bottom: 12px;">https://jashwanthreddychalla2007-svg.github.io/vault-storage/</div>
+        <div><b>Docker Compose Quickstart:</b></div>
+        <div style="color: #9CA3AF; background: #0B0F19; padding: 8px; border-radius: 4px;">
+          git clone https://github.com/jashwanthreddychalla2007-svg/vault-storage.git<br />
+          cd vault-storage && docker-compose up -d
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Vault Presentation Deck</span>
+      <span>Slide 8 of 8</span>
+    </div>
+  </div>
+
+</body>
+</html>
