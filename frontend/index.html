@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vault — Enterprise Fault-Tolerant Distributed Storage Platform</title>
+  <title>Vault — 6-Node Self-Healing Distributed Object Storage System</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -38,43 +38,41 @@
       <div class="flex items-center gap-3">
         <div class="w-8 h-8 rounded bg-vaultCyan/20 border border-vaultCyan/50 flex items-center justify-center font-bold text-vaultCyan text-base shadow-lg shadow-vaultCyan/10">V</div>
         <span class="font-extrabold text-white tracking-wider text-base">VAULT</span>
-        <span class="text-xs px-2 py-0.5 rounded bg-vaultCyan/10 text-vaultCyan border border-vaultCyan/30 font-semibold">ENTERPRISE v2.0</span>
+        <span class="text-xs px-2 py-0.5 rounded bg-vaultCyan/10 text-vaultCyan border border-vaultCyan/30 font-semibold">6-NODE CLUSTER v3.0</span>
       </div>
 
       <div class="flex items-center gap-2 bg-[#161F30] border border-vaultBorder px-3 py-1.5 rounded text-xs font-medium text-gray-200">
-        <svg class="w-3.5 h-3.5 text-vaultCyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-        <span id="currentOrgName">Vault Labs Enterprise</span>
+        <span class="text-vaultCyan font-mono">Zones:</span>
+        <span class="px-1.5 py-0.5 rounded bg-sky-950 text-sky-400 border border-sky-800 text-[10px] font-mono">ZONE A (N1-N3)</span>
+        <span class="px-1.5 py-0.5 rounded bg-purple-950 text-purple-400 border border-purple-800 text-[10px] font-mono">ZONE B (N4-N6)</span>
       </div>
 
       <nav class="flex items-center bg-[#131B2A] p-1 rounded border border-vaultBorder text-xs">
         <button id="tabStorage" onclick="switchTab('storage')" class="px-3 py-1.5 rounded font-bold text-vaultCyan bg-[#1F2B3E] transition flex items-center gap-1.5">
-          <span>📦</span> STORAGE & S3 IAM
+          <span>📦</span> MY STORAGE
         </button>
-        <button id="tabOps" onclick="switchTab('ops')" class="px-3 py-1.5 rounded font-bold text-gray-400 hover:text-white transition flex items-center gap-1.5">
-          <span>⚡</span> OPERATIONS & CHAOS
+        <button id="tabChaos" onclick="switchTab('chaos')" class="px-3 py-1.5 rounded font-bold text-gray-400 hover:text-white transition flex items-center gap-1.5">
+          <span>⚡</span> ADMIN CHAOS LAB
         </button>
         <button id="tabMerkle" onclick="switchTab('merkle')" class="px-3 py-1.5 rounded font-bold text-gray-400 hover:text-white transition flex items-center gap-1.5">
-          <span>🌳</span> MERKLE & INTEGRITY
+          <span>🌳</span> MERKLE & BITROT
         </button>
         <button id="tabBench" onclick="switchTab('bench')" class="px-3 py-1.5 rounded font-bold text-gray-400 hover:text-white transition flex items-center gap-1.5">
-          <span>📊</span> BENCHMARK & RAFT
+          <span>📊</span> BENCHMARKS & RAFT
         </button>
       </nav>
     </div>
 
     <div class="flex items-center gap-4">
       <div class="flex items-center gap-2 bg-[#162032] px-3 py-1.5 rounded border border-vaultBorder text-xs">
-        <span class="text-vaultMuted font-mono">Role Guard:</span>
+        <span class="text-vaultMuted font-mono">Role:</span>
         <select id="roleSelector" onchange="changeActiveRole(this.value)" class="bg-transparent text-vaultCyan font-bold outline-none cursor-pointer">
-          <option value="platform_owner" class="bg-[#111827] text-white">Platform Owner</option>
-          <option value="storage_operator" class="bg-[#111827] text-white">Storage Operator</option>
-          <option value="developer" class="bg-[#111827] text-white">Developer</option>
-          <option value="viewer" class="bg-[#111827] text-white">Viewer (Read-Only)</option>
+          <option value="ADMIN" class="bg-[#111827] text-white">Administrator</option>
+          <option value="USER" class="bg-[#111827] text-white">Developer User</option>
         </select>
       </div>
 
       <button onclick="openModal('authModal')" class="text-xs bg-vaultCyan/10 text-vaultCyan border border-vaultCyan/30 hover:bg-vaultCyan/20 px-3 py-1.5 rounded transition font-medium">Sign In</button>
-      <button onclick="openModal('apiKeyModal')" class="text-xs bg-[#1F2B3E] text-gray-300 border border-vaultBorder hover:border-vaultCyan px-3 py-1.5 rounded transition font-medium">API Keys</button>
     </div>
   </header>
 
@@ -84,86 +82,56 @@
       <div class="bg-vaultCard border border-vaultBorder rounded p-4">
         <div class="text-[11px] font-mono text-vaultMuted uppercase">Cluster Status</div>
         <div id="statHealth" class="text-lg font-bold text-vaultGreen mt-1 flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-vaultGreen animate-pulse"></span> ONLINE
+          <span class="w-2.5 h-2.5 rounded-full bg-vaultGreen animate-pulse"></span> HEALTHY
         </div>
       </div>
       <div class="bg-vaultCard border border-vaultBorder rounded p-4">
-        <div class="text-[11px] font-mono text-vaultMuted uppercase">Active Nodes</div>
-        <div id="statNodes" class="text-lg font-bold text-white mt-1 code-font">5 / 5</div>
+        <div class="text-[11px] font-mono text-vaultMuted uppercase">Healthy Nodes</div>
+        <div id="statNodes" class="text-lg font-bold text-white mt-1 code-font">6 / 6</div>
       </div>
       <div class="bg-vaultCard border border-vaultBorder rounded p-4">
-        <div class="text-[11px] font-mono text-vaultMuted uppercase">Anti-Entropy Sweeps</div>
-        <div id="statScrubs" class="text-lg font-bold text-vaultCyan mt-1 code-font">0</div>
+        <div class="text-[11px] font-mono text-vaultMuted uppercase">Logical Storage</div>
+        <div id="statLogical" class="text-lg font-bold text-vaultCyan mt-1 code-font">0 B</div>
       </div>
       <div class="bg-vaultCard border border-vaultBorder rounded p-4">
-        <div class="text-[11px] font-mono text-vaultMuted uppercase">Raft Consensus Leader</div>
-        <div id="statRaftLeader" class="text-sm font-bold text-vaultTeal mt-1.5 code-font">Node-1 (Term 1)</div>
+        <div class="text-[11px] font-mono text-vaultMuted uppercase">Physical Storage</div>
+        <div id="statPhysical" class="text-lg font-bold text-vaultTeal mt-1 code-font">0 B</div>
       </div>
       <div class="bg-vaultCard border border-vaultBorder rounded p-4">
-        <div class="text-[11px] font-mono text-vaultMuted uppercase">RBAC Guard Role</div>
-        <div id="statActiveRole" class="text-sm font-bold text-vaultCyan mt-1.5 code-font uppercase">PLATFORM_OWNER</div>
+        <div class="text-[11px] font-mono text-vaultMuted uppercase">Replication Overhead</div>
+        <div id="statOverhead" class="text-sm font-bold text-vaultAmber mt-1.5 code-font">200.0%</div>
       </div>
     </section>
 
+    <!-- TAB 1: MY STORAGE & BUCKETS -->
     <div id="viewStorage" class="space-y-6">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-lg font-bold text-white">Multi-Tenant Buckets & S3 API Playground</h2>
-          <p class="text-xs text-vaultMuted">Project: <span class="text-vaultCyan font-mono">hackathon-demo</span> • Tenant Isolation: <span class="text-vaultGreen font-mono">ACTIVE (RLS)</span></p>
+          <h2 class="text-lg font-bold text-white">My Storage Buckets & Object Manifests</h2>
+          <p class="text-xs text-vaultMuted">Zone-aware placement across <span class="text-sky-400 font-mono">ZONE A</span> and <span class="text-purple-400 font-mono">ZONE B</span></p>
         </div>
-        <button onclick="openModal('createBucketModal')" class="text-xs bg-vaultCyan text-gray-950 font-bold px-4 py-2 rounded hover:bg-sky-400 transition">
-          + Create Bucket
-        </button>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="font-bold text-white text-sm">primary-datasets</span>
-            <span class="text-xs font-mono px-2 py-0.5 rounded bg-sky-950 text-vaultCyan border border-sky-800">REED_SOLOMON_2_1</span>
-          </div>
-          <div class="text-xs text-vaultMuted">Tenant: Vault Labs Enterprise • ID: bkt_primary</div>
-          <div class="flex justify-between items-center text-xs font-mono pt-2 border-t border-vaultBorder">
-            <span class="text-vaultMuted">3 Objects</span>
-            <span class="text-vaultGreen">Integrity Verified 100%</span>
-          </div>
-        </div>
-
-        <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="font-bold text-white text-sm">backup-blobs</span>
-            <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-950 text-vaultGreen border border-emerald-800">REPLICATION_3X</span>
-          </div>
-          <div class="text-xs text-vaultMuted">Tenant: Vault Labs Enterprise • ID: bkt_backup</div>
-          <div class="flex justify-between items-center text-xs font-mono pt-2 border-t border-vaultBorder">
-            <span class="text-vaultMuted">1 Object</span>
-            <span class="text-vaultGreen">Integrity Verified 100%</span>
-          </div>
-        </div>
+        <form id="uploadForm" class="flex items-center gap-3">
+          <input type="file" id="fileInput" class="text-xs text-vaultMuted file:bg-[#1C2638] file:text-vaultCyan file:border file:border-vaultBorder file:px-3 file:py-1 file:rounded file:cursor-pointer" required />
+          <select id="policyInput" class="bg-[#131B2A] border border-vaultBorder text-xs text-gray-200 px-2 py-1 rounded font-mono">
+            <option value="3">Replication ×3 (High Durability)</option>
+            <option value="2">Replication ×2 (Standard)</option>
+            <option value="4">Replication ×4 (Ultra Durability)</option>
+          </select>
+          <button type="submit" class="text-xs bg-vaultCyan text-gray-950 font-bold px-4 py-2 rounded hover:bg-sky-400 transition">+ Upload Object</button>
+        </form>
       </div>
 
       <div class="bg-vaultCard border border-vaultBorder rounded p-5 space-y-4">
-        <div class="flex items-center justify-between border-b border-vaultBorder pb-3">
-          <h3 class="font-bold text-white text-sm">Stored Objects & Merkle Digests</h3>
-          <form id="uploadForm" class="flex items-center gap-3">
-            <input type="file" id="fileInput" class="text-xs text-vaultMuted file:bg-[#1C2638] file:text-vaultCyan file:border file:border-vaultBorder file:px-3 file:py-1 file:rounded file:cursor-pointer" required />
-            <select id="policyInput" class="bg-[#131B2A] border border-vaultBorder text-xs text-gray-200 px-2 py-1 rounded">
-              <option value="REED_SOLOMON_2_1">Reed-Solomon (2+1)</option>
-              <option value="REPLICATION_3X">3x Replication</option>
-            </select>
-            <button type="submit" class="text-xs bg-vaultCyan text-gray-950 font-bold px-3 py-1.5 rounded hover:bg-sky-400 transition">Upload Payload</button>
-          </form>
-        </div>
-
+        <h3 class="font-bold text-white text-sm border-b border-vaultBorder pb-3">Stored Objects & Replica Maps</h3>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs font-mono">
             <thead>
               <tr class="border-b border-vaultBorder text-vaultMuted uppercase">
-                <th class="py-2">Object Key</th>
-                <th class="py-2">Policy</th>
+                <th class="py-2">Object Name</th>
                 <th class="py-2">Size</th>
-                <th class="py-2">Merkle Root Hash</th>
-                <th class="py-2">Replica Map</th>
+                <th class="py-2">Version</th>
+                <th class="py-2">Status</th>
+                <th class="py-2">Zone Replica Distribution</th>
                 <th class="py-2 text-right">Actions</th>
               </tr>
             </thead>
@@ -172,8 +140,72 @@
           </table>
         </div>
       </div>
+    </div>
+
+    <!-- TAB 2: ADMIN CHAOS LAB & 6-NODE TOPOLOGY -->
+    <div id="viewChaos" class="space-y-6 hidden">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-white">6-Node Infrastructure Topology & Admin Chaos Lab</h2>
+          <p class="text-xs text-vaultMuted">Simulate hardware crashes, silent bitrot, network partitions, and trigger rebalancing</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="triggerIntegrityScan()" class="text-xs bg-vaultCyan text-gray-950 font-bold px-3 py-2 rounded">Run Integrity Scan</button>
+          <button onclick="triggerRebalance()" class="text-xs bg-vaultTeal text-gray-950 font-bold px-3 py-2 rounded">Start Rebalance</button>
+          <button onclick="restoreAllNodes()" class="text-xs bg-vaultGreen text-gray-950 font-bold px-3 py-2 rounded">Restore All Nodes</button>
+        </div>
+      </div>
+
+      <!-- 6-NODE TOPOLOGY GRID -->
+      <div class="space-y-4">
+        <div class="text-xs font-bold text-vaultMuted uppercase tracking-wider flex items-center justify-between">
+          <span>ZONE A (Nodes 1..3) & ZONE B (Nodes 4..6)</span>
+          <span class="text-vaultGreen font-mono">6 INDEPENDENT NODE DAEMONS</span>
+        </div>
+        <div id="nodeGrid" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        </div>
+      </div>
+
+      <!-- AUTO-REPAIR QUEUE & REAL EVENTS STREAM -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-vaultCard border border-vaultBorder rounded p-4 font-mono text-xs space-y-2">
+          <div class="text-vaultMuted flex justify-between border-b border-vaultBorder pb-2">
+            <span>AUTOMATIC REPAIR QUEUE</span>
+            <span id="statRepairCount" class="text-vaultCyan">0 JOBS</span>
+          </div>
+          <div id="repairQueueStream" class="h-48 overflow-y-auto space-y-2 text-gray-300">
+          </div>
+        </div>
+
+        <div class="bg-vaultCard border border-vaultBorder rounded p-4 font-mono text-xs space-y-2">
+          <div class="text-vaultMuted flex justify-between border-b border-vaultBorder pb-2">
+            <span>CLUSTER REAL EVENT STREAM</span>
+            <span class="text-vaultGreen">WS ACTIVE</span>
+          </div>
+          <div id="eventStream" class="h-48 overflow-y-auto space-y-1 text-gray-300">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: MERKLE TREE & BITROT INSPECTOR -->
+    <div id="viewMerkle" class="space-y-6 hidden">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-white">Merkle Tree Structural Inspector & Bitrot Diff Scanner</h2>
+          <p class="text-xs text-vaultMuted">Cryptographic integrity verification down to binary leaf blocks</p>
+        </div>
+        <button onclick="inspectMerkleForFirstObject()" class="text-xs bg-vaultCyan text-gray-950 font-bold px-4 py-2 rounded">
+          Inspect First Object Merkle Graph
+        </button>
+      </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-3">
+          <h3 class="font-bold text-white text-xs border-b border-vaultBorder pb-2">Merkle Hash Tree Breakdown</h3>
+          <pre id="merkleTreeBox" class="bg-[#0B0F19] p-3 rounded text-[11px] code-font text-vaultCyan overflow-x-auto border border-vaultBorder h-64">Click "Inspect First Object Merkle Graph" to view structural tree digest.</pre>
+        </div>
+
         <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-3">
           <div class="flex justify-between items-center border-b border-vaultBorder pb-2">
             <h3 class="font-bold text-white text-xs">AWS S3 SDK Code Snippet Generator</h3>
@@ -185,93 +217,17 @@
               <option value="aws_cli">AWS CLI</option>
             </select>
           </div>
-          <pre id="snippetBox" class="bg-[#0B0F19] p-3 rounded text-[11px] code-font text-vaultCyan overflow-x-auto border border-vaultBorder h-48"></pre>
-        </div>
-
-        <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-3">
-          <div class="border-b border-vaultBorder pb-2">
-            <h3 class="font-bold text-white text-xs">AWS S3 IAM JSON Policy Evaluator</h3>
-            <p class="text-[11px] text-vaultMuted">Simulate AWS JSON policy rules (`Allow`/`Deny`) against storage endpoints</p>
-          </div>
-          <div class="space-y-2 text-xs">
-            <textarea id="iamJsonInput" class="w-full bg-[#0B0F19] border border-vaultBorder rounded p-2 text-[11px] font-mono text-vaultCyan h-24">{
-  "Statement": [
-    { "Sid": "AllowRead", "Effect": "Allow", "Action": ["s3:GetObject"], "Resource": ["arn:aws:s3:::primary-datasets/*"] }
-  ]
-}</textarea>
-            <div class="flex gap-2">
-              <input type="text" id="iamAction" value="s3:GetObject" class="flex-1 bg-[#162032] border border-vaultBorder rounded px-2 py-1 text-xs text-white" placeholder="Action" />
-              <input type="text" id="iamResource" value="arn:aws:s3:::primary-datasets/file.bin" class="flex-1 bg-[#162032] border border-vaultBorder rounded px-2 py-1 text-xs text-white" placeholder="Resource" />
-              <button onclick="evaluateIAM()" class="bg-vaultCyan text-gray-950 font-bold px-3 py-1 rounded text-xs">Evaluate</button>
-            </div>
-            <div id="iamResult" class="p-2 rounded bg-[#0B0F19] border border-vaultBorder font-mono text-xs text-vaultGreen">Result: Awaiting Evaluation</div>
-          </div>
+          <pre id="snippetBox" class="bg-[#0B0F19] p-3 rounded text-[11px] code-font text-vaultCyan overflow-x-auto border border-vaultBorder h-64"></pre>
         </div>
       </div>
     </div>
 
-    <div id="viewOps" class="space-y-6 hidden">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-lg font-bold text-white">5-Node Infrastructure Topology & Chaos Simulation</h2>
-          <p class="text-xs text-vaultMuted">Rack awareness (`rack-1`, `rack-2`, `rack-3`) & hardware S.M.A.R.T telemetry</p>
-        </div>
-        <button onclick="triggerRecover()" class="text-xs bg-vaultGreen text-gray-950 font-bold px-4 py-2 rounded hover:bg-emerald-400 transition">
-          Recover Cluster Nodes
-        </button>
-      </div>
-
-      <div id="nodeGrid" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-vaultCard border border-vaultBorder rounded p-4 font-mono text-xs space-y-2">
-          <div class="text-vaultMuted flex justify-between border-b border-vaultBorder pb-2">
-            <span>STORAGE CLUSTER LOG STREAM</span>
-            <span class="text-vaultCyan">WS ACTIVE</span>
-          </div>
-          <div id="eventStream" class="h-48 overflow-y-auto space-y-1 text-gray-300"></div>
-        </div>
-
-        <div class="bg-vaultCard border border-vaultBorder rounded p-4 font-mono text-xs space-y-2">
-          <div class="text-vaultMuted flex justify-between border-b border-vaultBorder pb-2">
-            <span>SECURITY AUDIT TRAIL (OWASP/NIST)</span>
-            <span class="text-vaultGreen">RBAC ACTIVE</span>
-          </div>
-          <div id="auditLogStream" class="h-48 overflow-y-auto space-y-1 text-gray-300"></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="viewMerkle" class="space-y-6 hidden">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-lg font-bold text-white">Merkle Tree Structural Inspector & Bitrot Byte Offset Inspector</h2>
-          <p class="text-xs text-vaultMuted">Cryptographic integrity proof using SHA-256 binary leaf hashing</p>
-        </div>
-        <button onclick="inspectMerkleForFirstObject()" class="text-xs bg-vaultCyan text-gray-950 font-bold px-4 py-2 rounded">
-          Inspect Object Merkle Graph
-        </button>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-3">
-          <h3 class="font-bold text-white text-xs border-b border-vaultBorder pb-2">Merkle Hash Tree Visualizer</h3>
-          <pre id="merkleTreeBox" class="bg-[#0B0F19] p-3 rounded text-[11px] code-font text-vaultCyan overflow-x-auto border border-vaultBorder h-64">Click "Inspect Object Merkle Graph" to view structural tree digest.</pre>
-        </div>
-
-        <div class="bg-vaultCard border border-vaultBorder rounded p-4 space-y-3">
-          <h3 class="font-bold text-white text-xs border-b border-vaultBorder pb-2">Bitrot Byte-Level Corrupted Block Diff</h3>
-          <pre id="bitrotDiffBox" class="bg-[#0B0F19] p-3 rounded text-[11px] code-font text-vaultRed overflow-x-auto border border-vaultBorder h-64">Click "Inspect Object Merkle Graph" to scan byte diffs.</pre>
-        </div>
-      </div>
-    </div>
-
+    <!-- TAB 4: BENCHMARK & RAFT CONSENSUS -->
     <div id="viewBench" class="space-y-6 hidden">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-lg font-bold text-white">Performance Benchmarks & Raft Consensus State Machine</h2>
-          <p class="text-xs text-vaultMuted">Measure TTFB, P50/P95/P99 latency percentiles, and metadata Raft consensus</p>
+          <h2 class="text-lg font-bold text-white">Performance Benchmarks & Raft Consensus Metadata Engine</h2>
+          <p class="text-xs text-vaultMuted">TTFB, P50/P95/P99 latency percentiles, and metadata log consensus</p>
         </div>
         <div class="flex gap-2">
           <button onclick="runBenchmark()" class="text-xs bg-vaultCyan text-gray-950 font-bold px-3 py-2 rounded">Run Micro-Benchmark</button>
@@ -306,20 +262,21 @@
 
   </main>
 
+  <!-- MODALS -->
   <div id="authModal" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden z-50">
     <div class="bg-[#0F141C] border border-[#202A36] rounded-lg p-6 max-w-md w-full space-y-4 shadow-2xl">
       <div class="flex justify-between items-center border-b border-vaultBorder pb-3">
-        <h3 class="font-bold text-white text-base">Sign In to Vault Workspace</h3>
+        <h3 class="font-bold text-white text-base">Sign In to Vault</h3>
         <button onclick="closeModal('authModal')" class="text-gray-400 hover:text-white">✕</button>
       </div>
       <form id="loginForm" class="space-y-3">
         <div>
           <label class="text-xs text-vaultMuted font-mono">Email Address</label>
-          <input type="email" id="authEmail" value="owner@vault.io" class="w-full bg-[#161F2E] border border-vaultBorder rounded px-3 py-2 text-xs text-white outline-none focus:border-vaultCyan" required />
+          <input type="email" id="authEmail" value="admin@vault.io" class="w-full bg-[#161F2E] border border-vaultBorder rounded px-3 py-2 text-xs text-white outline-none focus:border-vaultCyan" required />
         </div>
         <div>
-          <label class="text-xs text-vaultMuted font-mono">Password (min 15 chars NIST rule)</label>
-          <input type="password" id="authPassword" value="VaultPlatform2026!Secure" class="w-full bg-[#161F2E] border border-vaultBorder rounded px-3 py-2 text-xs text-white outline-none focus:border-vaultCyan" required />
+          <label class="text-xs text-vaultMuted font-mono">Password</label>
+          <input type="password" id="authPassword" value="AdminVault2026!Secure" class="w-full bg-[#161F2E] border border-vaultBorder rounded px-3 py-2 text-xs text-white outline-none focus:border-vaultCyan" required />
         </div>
         <button type="submit" class="w-full bg-vaultCyan text-gray-950 font-bold py-2 rounded text-xs hover:bg-sky-400 transition">
           Authenticate Session
@@ -329,26 +286,11 @@
     </div>
   </div>
 
-  <div id="apiKeyModal" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden z-50">
-    <div class="bg-[#0F141C] border border-[#202A36] rounded-lg p-6 max-w-lg w-full space-y-4 shadow-2xl">
-      <div class="flex justify-between items-center border-b border-vaultBorder pb-3">
-        <h3 class="font-bold text-white text-base">API Key Credentials</h3>
-        <button onclick="closeModal('apiKeyModal')" class="text-gray-400 hover:text-white">✕</button>
-      </div>
-      <div class="space-y-3">
-        <button onclick="generateApiKey()" class="bg-vaultCyan text-gray-950 text-xs font-bold px-3 py-1.5 rounded hover:bg-sky-400 transition">+ Generate New Machine Key</button>
-        <div id="apiKeyList" class="space-y-2 font-mono text-xs"></div>
-      </div>
-    </div>
-  </div>
-
   <script>
-    let activeRole = "platform_owner";
-    let activeUserId = "usr_owner";
-    let sdkSnippets = {};
+    let activeRole = "ADMIN";
 
     function switchTab(tab) {
-      ['storage', 'ops', 'merkle', 'bench'].forEach(t => {
+      ['storage', 'chaos', 'merkle', 'bench'].forEach(t => {
         document.getElementById(`view${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.add('hidden');
         document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`).className = 'px-3 py-1.5 rounded font-bold text-gray-400 hover:text-white transition flex items-center gap-1.5';
       });
@@ -358,7 +300,6 @@
 
     function changeActiveRole(role) {
       activeRole = role;
-      document.getElementById('statActiveRole').innerText = role.toUpperCase();
       fetchClusterStatus();
     }
 
@@ -367,105 +308,178 @@
 
     async function fetchClusterStatus() {
       try {
-        const res = await fetch('/api/v1/cluster/status');
+        const res = await fetch('/cluster/metrics');
         const data = await res.json();
         
-        document.getElementById('statNodes').innerText = `${data.nodes.filter(n => n.status === 'ONLINE').length} / ${data.nodes.length}`;
-        document.getElementById('statScrubs').innerText = data.scrubber_metrics.scrub_count;
-        document.getElementById('statRaftLeader').innerText = `Node-${data.raft_state.leader_id} (Term ${data.raft_state.current_term})`;
+        document.getElementById('statNodes').innerText = `${data.healthy_node_count} / ${data.total_node_count}`;
+        document.getElementById('statLogical').innerText = formatBytes(data.logical_storage_bytes);
+        document.getElementById('statPhysical').innerText = formatBytes(data.physical_storage_bytes);
+        document.getElementById('statOverhead').innerText = data.replication_overhead;
+        document.getElementById('statHealth').innerText = data.cluster_health;
 
         renderNodes(data.nodes);
         renderObjects();
-        renderAuditLogs(data.audit_logs || []);
-        renderLogs(data.event_logs || []);
-        renderRaftLogs(data.raft_state.log_entries || []);
+        renderRepairs(data.repair_jobs || []);
+        renderEvents(data.events || []);
       } catch (err) {
-        console.error("Connection error to Vault backend", err);
+        console.error("Error fetching cluster metrics", err);
       }
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes || bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     }
 
     function renderNodes(nodes) {
       const grid = document.getElementById('nodeGrid');
       grid.innerHTML = nodes.map(n => `
-        <div class="bg-vaultCard border ${n.status === 'ONLINE' ? 'border-vaultBorder' : 'border-vaultRed/80'} rounded p-3 space-y-2 text-xs">
+        <div class="bg-vaultCard border ${n.status === 'HEALTHY' ? 'border-vaultBorder' : (n.status === 'PARTITIONED' ? 'border-amber-500/80' : 'border-vaultRed/80')} rounded p-3 space-y-2 text-xs">
           <div class="flex justify-between items-center">
-            <span class="font-bold text-white font-mono">Node-${n.id}</span>
-            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono ${n.status === 'ONLINE' ? 'bg-emerald-950 text-vaultGreen border border-emerald-800' : 'bg-rose-950 text-vaultRed border border-rose-800'}">${n.status}</span>
+            <span class="font-bold text-white font-mono">Node 0${n.id}</span>
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-mono ${n.status === 'HEALTHY' ? 'bg-emerald-950 text-vaultGreen border border-emerald-800' : (n.status === 'PARTITIONED' ? 'bg-amber-950 text-amber-400 border border-amber-800' : 'bg-rose-950 text-vaultRed border border-rose-800')}">${n.status}</span>
           </div>
-          <div class="text-[11px] text-vaultMuted">Rack: <span class="text-vaultCyan font-mono">${n.rack}</span></div>
-          <div class="text-[11px] text-vaultMuted">SMART Health: <span class="font-mono ${n.smart_health > 60 ? 'text-vaultGreen' : 'text-vaultAmber'}">${n.smart_health}%</span></div>
-          <div class="pt-2 flex gap-1 border-t border-vaultBorder/60">
-            <button onclick="killNode(${n.id})" class="flex-1 bg-rose-950 text-vaultRed hover:bg-rose-900 border border-rose-800 py-1 rounded text-[10px] font-bold">FAIL</button>
-            <button onclick="injectBitrot(${n.id})" class="flex-1 bg-amber-950 text-vaultAmber hover:bg-amber-900 border border-amber-800 py-1 rounded text-[10px] font-bold">BITROT</button>
+          <div class="text-[10px] text-vaultMuted">Zone: <span class="${n.zone === 'ZONE_A' ? 'text-sky-400' : 'text-purple-400'} font-mono">${n.zone}</span></div>
+          <div class="text-[10px] text-vaultMuted">Port: <span class="text-vaultCyan font-mono">${n.port}</span></div>
+          
+          <div class="pt-2 grid grid-cols-2 gap-1 border-t border-vaultBorder/60 text-[9px] font-bold">
+            <button onclick="failNode(${n.id})" class="bg-rose-950 text-vaultRed hover:bg-rose-900 border border-rose-800 py-1 rounded">FAIL</button>
+            <button onclick="restoreNode(${n.id})" class="bg-emerald-950 text-vaultGreen hover:bg-emerald-900 border border-emerald-800 py-1 rounded">RESTORE</button>
+            <button onclick="partitionNode(${n.id})" class="bg-amber-950 text-amber-400 hover:bg-amber-900 border border-amber-800 py-1 rounded">PARTITION</button>
+            <button onclick="corruptNode(${n.id})" class="bg-purple-950 text-purple-400 hover:bg-purple-900 border border-purple-800 py-1 rounded">CORRUPT</button>
           </div>
         </div>
       `).join('');
     }
 
     async function renderObjects() {
-      const res = await fetch('/api/v1/objects');
+      const res = await fetch('/objects');
       const objects = await res.json();
       const tbody = document.getElementById('objectTableBody');
 
       tbody.innerHTML = objects.map(o => `
         <tr class="hover:bg-[#162030]">
-          <td class="py-2.5 font-bold text-white">${o.filename}</td>
-          <td class="py-2.5 text-vaultCyan">${o.policy}</td>
-          <td class="py-2.5">${o.size_bytes} B</td>
-          <td class="py-2.5 text-gray-400 font-mono text-[11px]">${o.merkle_root.slice(0, 16)}...</td>
-          <td class="py-2.5">${o.chunks.map(c => `[N${c.node_id}:${c.status}]`).join(' ')}</td>
+          <td class="py-2.5 font-bold text-white">${o.name}</td>
+          <td class="py-2.5">${formatBytes(o.size)}</td>
+          <td class="py-2.5 text-vaultCyan font-mono">v${o.latest_version}</td>
+          <td class="py-2.5"><span class="px-2 py-0.5 rounded text-[10px] ${o.state === 'HEALTHY' ? 'bg-emerald-950 text-vaultGreen border border-emerald-800' : 'bg-rose-950 text-vaultRed border border-rose-800'}">${o.state}</span></td>
+          <td class="py-2.5">${o.replicas ? o.replicas.map(r => `<span class="mr-1 ${r.zone === 'ZONE_A' ? 'text-sky-400' : 'text-purple-400'}">[N${r.node_id}:${r.zone}]</span>`).join('') : ''}</td>
           <td class="py-2.5 text-right flex justify-end gap-1">
-            <button onclick="inspectMerkle('${o.id}')" class="bg-vaultTeal/20 text-vaultTeal hover:bg-vaultTeal/30 border border-vaultTeal/40 px-2 py-1 rounded text-[11px]">Merkle</button>
-            <button onclick="downloadObject('${o.id}')" class="bg-vaultCyan/20 text-vaultCyan hover:bg-vaultCyan/30 border border-vaultCyan/40 px-2 py-1 rounded text-[11px]">Download</button>
+            <button onclick="inspectMerkle('${o.id}')" class="bg-vaultTeal/20 text-vaultTeal border border-vaultTeal/40 px-2 py-1 rounded text-[10px]">Merkle</button>
+            <button onclick="downloadObject('${o.id}')" class="bg-vaultCyan/20 text-vaultCyan border border-vaultCyan/40 px-2 py-1 rounded text-[10px]">Download</button>
+            <button onclick="deleteObject('${o.id}')" class="bg-rose-950 text-vaultRed border border-rose-800 px-2 py-1 rounded text-[10px]">Delete</button>
           </td>
         </tr>
       `).join('');
     }
 
-    async function loadS3Snippets() {
-      const res = await fetch('/api/v1/s3/snippets');
-      sdkSnippets = await res.json();
-      const lang = document.getElementById('sdkLangSelect').value;
-      document.getElementById('snippetBox').innerText = sdkSnippets[lang] || sdkSnippets['curl'];
+    function renderRepairs(repairs) {
+      document.getElementById('statRepairCount').innerText = `${repairs.length} JOBS`;
+      const container = document.getElementById('repairQueueStream');
+      container.innerHTML = repairs.map(r => `
+        <div class="bg-[#111827] border border-vaultBorder p-2 rounded text-[11px] space-y-1">
+          <div class="flex justify-between font-bold">
+            <span class="text-vaultCyan">Job #${r.id.slice(0, 8)}</span>
+            <span class="${r.status === 'COMPLETED' ? 'text-vaultGreen' : 'text-vaultAmber'}">${r.status} (${r.progress}%)</span>
+          </div>
+          <div class="text-[10px] text-vaultMuted">Object: ${r.object_id.slice(0, 10)} | Node-${r.source_node} ➔ Node-${r.target_node}</div>
+        </div>
+      `).join('');
     }
 
-    async function evaluateIAM() {
-      const pJson = document.getElementById('iamJsonInput').value;
-      const act = document.getElementById('iamAction').value;
-      const res = document.getElementById('iamResource').value;
+    function renderEvents(events) {
+      const container = document.getElementById('eventStream');
+      container.innerHTML = events.map(e => `
+        <div class="flex items-center justify-between text-[10px]">
+          <span class="text-vaultMuted">${new Date(e.timestamp * 1000).toLocaleTimeString()}</span>
+          <span class="font-bold ${e.severity === 'CRITICAL' ? 'text-vaultRed' : (e.severity === 'WARNING' ? 'text-vaultAmber' : 'text-vaultCyan')}">${e.event_type}</span>
+          <span class="text-gray-300 truncate max-w-[200px]">${e.message}</span>
+        </div>
+      `).join('');
+    }
 
+    async function failNode(nodeId) {
+      if (activeRole !== 'ADMIN') return alert('403 Forbidden: Administrator role required for Chaos operations');
+      await fetch(`/admin/nodes/${nodeId}/fail`, { method: 'POST' });
+      fetchClusterStatus();
+    }
+
+    async function restoreNode(nodeId) {
+      if (activeRole !== 'ADMIN') return alert('403 Forbidden: Administrator role required');
+      await fetch(`/admin/nodes/${nodeId}/restore`, { method: 'POST' });
+      fetchClusterStatus();
+    }
+
+    async function partitionNode(nodeId) {
+      if (activeRole !== 'ADMIN') return alert('403 Forbidden: Administrator role required');
+      await fetch(`/admin/nodes/${nodeId}/partition`, { method: 'POST' });
+      fetchClusterStatus();
+    }
+
+    async function corruptNode(nodeId) {
+      if (activeRole !== 'ADMIN') return alert('403 Forbidden: Administrator role required');
       const formData = new FormData();
-      formData.append('policy_json', pJson);
-      formData.append('action', act);
-      formData.append('resource', res);
+      formData.append('node_id', nodeId);
+      await fetch(`/admin/corrupt`, { method: 'POST', body: formData });
+      fetchClusterStatus();
+    }
 
-      const r = await fetch('/api/v1/iam/evaluate', { method: 'POST', body: formData });
-      const data = await r.json();
-      const box = document.getElementById('iamResult');
-      if (data.decision === 'ALLOW') {
-        box.className = "p-2 rounded bg-emerald-950 border border-emerald-800 font-mono text-xs text-vaultGreen";
-        box.innerText = `Decision: ALLOW (${data.reason})`;
-      } else {
-        box.className = "p-2 rounded bg-rose-950 border border-rose-800 font-mono text-xs text-vaultRed";
-        box.innerText = `Decision: DENY (${data.reason})`;
+    async function triggerIntegrityScan() {
+      await fetch('/admin/integrity-scan', { method: 'POST' });
+      fetchClusterStatus();
+    }
+
+    async function triggerRebalance() {
+      await fetch('/admin/rebalance', { method: 'POST' });
+      fetchClusterStatus();
+    }
+
+    async function restoreAllNodes() {
+      for (let i = 1; i <= 6; i++) {
+        await fetch(`/admin/nodes/${i}/restore`, { method: 'POST' });
+      }
+      fetchClusterStatus();
+    }
+
+    async function downloadObject(objectId) {
+      const res = await fetch(`/objects/${objectId}/download`);
+      if (!res.ok) return alert('Failed to download object or version unavailable');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `download_${objectId.slice(0, 6)}.bin`;
+      a.click();
+    }
+
+    async function deleteObject(objectId) {
+      if (confirm('Create Tombstone version for this object?')) {
+        await fetch(`/objects/${objectId}`, { method: 'DELETE' });
+        fetchClusterStatus();
       }
     }
 
     async function inspectMerkle(objectId) {
       switchTab('merkle');
-      const rTree = await fetch(`/api/v1/merkle/inspect/${objectId}`);
-      const dTree = await rTree.json();
-      document.getElementById('merkleTreeBox').innerText = JSON.stringify(dTree.merkle_tree, null, 2);
-
-      const rDiff = await fetch(`/api/v1/merkle/bitrot-diff/${objectId}`);
-      const dDiff = await rDiff.json();
-      document.getElementById('bitrotDiffBox').innerText = JSON.stringify(dDiff.diff_inspection, null, 2);
+      const res = await fetch(`/api/v1/merkle/inspect/${objectId}`);
+      const data = await res.json();
+      document.getElementById('merkleTreeBox').innerText = JSON.stringify(data.merkle_tree, null, 2);
     }
 
     async function inspectMerkleForFirstObject() {
-      const res = await fetch('/api/v1/objects');
+      const res = await fetch('/objects');
       const objs = await res.json();
       if (objs.length > 0) inspectMerkle(objs[0].id);
+    }
+
+    async function loadS3Snippets() {
+      const res = await fetch('/api/v1/s3/snippets');
+      const snippets = await res.json();
+      const lang = document.getElementById('sdkLangSelect').value;
+      document.getElementById('snippetBox').innerText = snippets[lang] || snippets['curl'];
     }
 
     async function runBenchmark() {
@@ -478,124 +492,21 @@
     }
 
     async function triggerRaftElection() {
-      const res = await fetch('/api/v1/raft/election', { method: 'POST' });
+      await fetch('/api/v1/raft/election', { method: 'POST' });
       fetchClusterStatus();
-    }
-
-    function renderAuditLogs(logs) {
-      const container = document.getElementById('auditLogStream');
-      container.innerHTML = logs.map(l => `
-        <div class="flex items-center justify-between text-[11px]">
-          <span class="text-vaultMuted">${new Date(l.timestamp * 1000).toLocaleTimeString()}</span>
-          <span class="font-bold ${l.action.includes('DENIED') ? 'text-vaultRed' : 'text-vaultCyan'}">${l.action}</span>
-          <span class="text-gray-400">${l.resource_id}</span>
-        </div>
-      `).join('');
-    }
-
-    function renderLogs(logs) {
-      const container = document.getElementById('eventStream');
-      container.innerHTML = logs.map(l => `<div class="text-[11px]">${l}</div>`).join('');
-    }
-
-    function renderRaftLogs(logs) {
-      const container = document.getElementById('raftLogBox');
-      container.innerHTML = logs.map(l => `
-        <div class="flex justify-between text-[11px]">
-          <span class="text-vaultTeal">Index ${l.index} (Term ${l.term})</span>
-          <span class="text-gray-300 font-mono">${l.cmd}</span>
-        </div>
-      `).join('');
-    }
-
-    async function killNode(nodeId) {
-      const formData = new FormData();
-      formData.append('node_id', nodeId);
-      const res = await fetch('/api/v1/chaos/kill-node', {
-        method: 'POST',
-        headers: { 'x-user-role': activeRole, 'x-user-id': activeUserId },
-        body: formData
-      });
-      if (res.status === 403) alert("403 Forbidden: Role " + activeRole + " lacks chaos execution permission");
-      fetchClusterStatus();
-    }
-
-    async function injectBitrot(nodeId) {
-      const formData = new FormData();
-      formData.append('node_id', nodeId);
-      const res = await fetch('/api/v1/chaos/bitrot', {
-        method: 'POST',
-        headers: { 'x-user-role': activeRole, 'x-user-id': activeUserId },
-        body: formData
-      });
-      if (res.status === 403) alert("403 Forbidden: Role " + activeRole + " lacks bitrot permission");
-      fetchClusterStatus();
-    }
-
-    async function triggerRecover() {
-      const res = await fetch('/api/v1/chaos/recover', {
-        method: 'POST',
-        headers: { 'x-user-role': activeRole, 'x-user-id': activeUserId }
-      });
-      if (res.status === 403) alert("403 Forbidden: Role " + activeRole + " cannot trigger recovery");
-      fetchClusterStatus();
-    }
-
-    async function downloadObject(objectId) {
-      const res = await fetch(`/api/v1/objects/${objectId}/download`, {
-        headers: { 'x-user-role': activeRole, 'x-user-id': activeUserId }
-      });
-      if (res.status === 403) {
-        alert("403 Forbidden: Role " + activeRole + " cannot download objects");
-        return;
-      }
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `download_${objectId.slice(0, 6)}.bin`;
-      a.click();
     }
 
     document.getElementById('uploadForm').onsubmit = async (e) => {
       e.preventDefault();
       const file = document.getElementById('fileInput').files[0];
-      const policy = document.getElementById('policyInput').value;
+      const rf = document.getElementById('policyInput').value;
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('policy', policy);
+      formData.append('replication_factor', rf);
 
-      const res = await fetch('/api/v1/objects/upload', {
-        method: 'POST',
-        headers: { 'x-user-role': activeRole, 'x-user-id': activeUserId },
-        body: formData
-      });
-
-      if (res.status === 403) {
-        alert("403 Forbidden: Role " + activeRole + " is not allowed to upload files");
-        return;
-      }
-      fetchClusterStatus();
-    };
-
-    document.getElementById('loginForm').onsubmit = async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('authEmail').value;
-      const password = document.getElementById('authPassword').value;
-      const formData = new FormData();
-      formData.append('email', email);
-      formData.append('password', password);
-
-      const res = await fetch('/api/v1/auth/login', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (res.ok) {
-        document.getElementById('authResponse').innerText = `Authenticated: ${data.user.display_name} (${data.current_role})`;
-        activeRole = data.current_role;
-        document.getElementById('roleSelector').value = data.current_role;
-        changeActiveRole(data.current_role);
-      } else {
-        document.getElementById('authResponse').innerText = `Auth Error: ${data.detail}`;
-      }
+      const res = await fetch('/objects/upload', { method: 'POST', body: formData });
+      if (res.ok) fetchClusterStatus();
+      else alert('Upload failed');
     };
 
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -603,14 +514,11 @@
     const ws = new WebSocket(`${wsProtocol}//${wsHost}/ws/telemetry`);
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      document.getElementById('statScrubs').innerText = data.scrubber_metrics.scrub_count;
-      if (data.raft_state) {
-        document.getElementById('statRaftLeader').innerText = `Node-${data.raft_state.leader_id} (Term ${data.raft_state.current_term})`;
-        renderRaftLogs(data.raft_state.log_entries);
-      }
+      document.getElementById('statNodes').innerText = `${data.healthy_node_count} / ${data.total_node_count}`;
+      document.getElementById('statHealth').innerText = data.cluster_health;
       renderNodes(data.nodes);
-      if (data.audit_logs) renderAuditLogs(data.audit_logs);
-      if (data.logs) renderLogs(data.logs);
+      if (data.events) renderEvents(data.events);
+      if (data.repair_jobs) renderRepairs(data.repair_jobs);
     };
 
     loadS3Snippets();
