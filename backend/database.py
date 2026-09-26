@@ -150,6 +150,9 @@ def init_db():
     """)
 
     # Performance Optimization Indexes
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_buckets_name ON buckets(name);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_nodes_status ON storage_nodes(status);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_objects_bucket ON objects(bucket_id);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_objects_state ON objects(state);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_versions_obj ON object_versions(object_id);")

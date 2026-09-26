@@ -188,16 +188,32 @@ def list_objects():
     cursor.execute("SELECT * FROM objects WHERE state != 'DELETED' ORDER BY updated_at DESC;")
     objs = [dict(r) for r in cursor.fetchall()]
     
-    for obj in objs:
-        cursor.execute("""
-        SELECT r.node_id, r.state, n.zone 
-        FROM object_replicas r 
-        JOIN object_versions v ON r.object_version_id = v.id 
-        JOIN storage_nodes n ON r.node_id = n.id 
-        WHERE v.object_id = ? AND v.version_number = ?;
-        """, (obj["id"], obj["latest_version"]))
-        obj["replicas"] = [dict(r) for r in cursor.fetchall()]
+    if not objs:
+        conn.close()
+        return []
+
+    obj_map = {o["id"]: o for o in objs}
+    for o in objs:
+        o["replicas"] = []
+
+    cursor.execute("""
+    SELECT v.object_id, r.node_id, r.state, n.zone 
+    FROM object_replicas r 
+    JOIN object_versions v ON r.object_version_id = v.id 
+    JOIN storage_nodes n ON r.node_id = n.id 
+    JOIN objects o ON v.object_id = o.id AND v.version_number = o.latest_version
+    WHERE o.state != 'DELETED';
+    """)
     
+    for row in cursor.fetchall():
+        oid = row["object_id"]
+        if oid in obj_map:
+            obj_map[oid]["replicas"].append({
+                "node_id": row["node_id"],
+                "state": row["state"],
+                "zone": row["zone"]
+            })
+
     conn.close()
     return objs
 
