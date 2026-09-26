@@ -149,6 +149,15 @@ def init_db():
     );
     """)
 
+    # Performance Optimization Indexes
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_objects_bucket ON objects(bucket_id);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_objects_state ON objects(state);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_versions_obj ON object_versions(object_id);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_replicas_ver ON object_replicas(object_version_id);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_replicas_node ON object_replicas(node_id);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_repairs_status ON repair_jobs(status);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp DESC);")
+
     conn.commit()
 
     # Seed Default 6 Storage Nodes (Zone A: Nodes 1..3, Zone B: Nodes 4..6)

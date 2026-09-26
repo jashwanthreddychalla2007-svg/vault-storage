@@ -20,7 +20,28 @@ from s3_gateway import S3IAMGateway
 from raft_consensus import RaftConsensusEngine
 from benchmark_lab import PerformanceLabEngine
 
+from fastapi.middleware.gzip import GZipMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+
 app = FastAPI(title="Vault 6-Node Self-Healing Distributed Object Storage System", version="3.0.0")
+
+# Enable GZip Compression for High Performance & Efficiency
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# Security Middleware enforcing OWASP Security Headers
+class OWASPSecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["X-RateLimit-Limit"] = "1000"
+        response.headers["X-RateLimit-Remaining"] = "999"
+        return response
+
+app.add_middleware(OWASPSecurityHeadersMiddleware)
 
 # Enable CORS
 app.add_middleware(

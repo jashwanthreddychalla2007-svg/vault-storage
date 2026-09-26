@@ -38,12 +38,17 @@
 </head>
 <body class="min-h-screen flex flex-col antialiased bg-[#080B12] text-gray-100 selection:bg-vaultCyan selection:text-gray-950">
   
+  <!-- ACCESSIBILITY SKIP TO CONTENT LINK -->
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-vaultCyan focus:text-gray-950 focus:font-bold focus:rounded-lg focus:shadow-lg font-mono text-xs">
+    Skip to main content
+  </a>
+
   <!-- HEADER NAVBAR -->
-  <header class="border-b border-vaultBorder bg-[#0B0F19]/90 backdrop-blur-md px-6 py-3.5 flex flex-wrap items-center justify-between sticky top-0 z-50">
+  <header role="banner" aria-label="Vault Control Plane Header" class="border-b border-vaultBorder bg-[#0B0F19]/90 backdrop-blur-md px-6 py-3.5 flex flex-wrap items-center justify-between sticky top-0 z-50">
     <div class="flex items-center gap-6">
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-sky-500 to-emerald-400 p-0.5 shadow-lg shadow-sky-500/20">
-          <div class="w-full h-full bg-[#0B0F19] rounded-[7px] flex items-center justify-center font-extrabold text-vaultCyan text-lg">V</div>
+          <div aria-hidden="true" class="w-full h-full bg-[#0B0F19] rounded-[7px] flex items-center justify-center font-extrabold text-vaultCyan text-lg">V</div>
         </div>
         <div>
           <div class="flex items-center gap-2">
@@ -55,29 +60,29 @@
       </div>
 
       <!-- ZONE BADGES -->
-      <div class="hidden lg:flex items-center gap-2 bg-[#121A29] border border-vaultBorder px-3 py-1.5 rounded-lg text-xs">
+      <div class="hidden lg:flex items-center gap-2 bg-[#121A29] border border-vaultBorder px-3 py-1.5 rounded-lg text-xs" role="region" aria-label="Fault Domain Zones">
         <span class="text-vaultMuted font-mono text-[11px]">Fault Domains:</span>
         <span class="px-2 py-0.5 rounded bg-sky-950/80 text-sky-400 border border-sky-800 text-[10px] font-mono font-bold flex items-center gap-1">
-          <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span> ZONE A (Node 1-3)
+          <span class="w-1.5 h-1.5 rounded-full bg-sky-400" aria-hidden="true"></span> ZONE A (Node 1-3)
         </span>
         <span class="px-2 py-0.5 rounded bg-purple-950/80 text-purple-400 border border-purple-800 text-[10px] font-mono font-bold flex items-center gap-1">
-          <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> ZONE B (Node 4-6)
+          <span class="w-1.5 h-1.5 rounded-full bg-purple-400" aria-hidden="true"></span> ZONE B (Node 4-6)
         </span>
       </div>
 
       <!-- TABS NAVIGATION -->
-      <nav class="flex items-center bg-[#111724] p-1 rounded-lg border border-vaultBorder text-xs font-semibold">
-        <button id="tabStorage" onclick="switchTab('storage')" class="px-3.5 py-1.5 rounded-md text-vaultCyan bg-[#1B263B] transition shadow-sm flex items-center gap-1.5">
-          <span>📦</span> MY STORAGE
+      <nav role="navigation" aria-label="Main Application Navigation" class="flex items-center bg-[#111724] p-1 rounded-lg border border-vaultBorder text-xs font-semibold">
+        <button id="tabStorage" role="tab" aria-selected="true" aria-controls="viewStorage" onclick="switchTab('storage')" class="px-3.5 py-1.5 rounded-md text-vaultCyan bg-[#1B263B] transition shadow-sm flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-vaultCyan">
+          <span aria-hidden="true">📦</span> MY STORAGE
         </button>
-        <button id="tabChaos" onclick="switchTab('chaos')" class="px-3.5 py-1.5 rounded-md text-gray-400 hover:text-white transition flex items-center gap-1.5">
-          <span>⚡</span> ADMIN CHAOS LAB
+        <button id="tabChaos" role="tab" aria-selected="false" aria-controls="viewChaos" onclick="switchTab('chaos')" class="px-3.5 py-1.5 rounded-md text-gray-400 hover:text-white transition flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-vaultCyan">
+          <span aria-hidden="true">⚡</span> ADMIN CHAOS LAB
         </button>
-        <button id="tabMerkle" onclick="switchTab('merkle')" class="px-3.5 py-1.5 rounded-md text-gray-400 hover:text-white transition flex items-center gap-1.5">
-          <span>🌳</span> MERKLE & BITROT
+        <button id="tabMerkle" role="tab" aria-selected="false" aria-controls="viewMerkle" onclick="switchTab('merkle')" class="px-3.5 py-1.5 rounded-md text-gray-400 hover:text-white transition flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-vaultCyan">
+          <span aria-hidden="true">🌳</span> MERKLE & BITROT
         </button>
-        <button id="tabBench" onclick="switchTab('bench')" class="px-3.5 py-1.5 rounded-md text-gray-400 hover:text-white transition flex items-center gap-1.5">
-          <span>📊</span> BENCHMARKS & RAFT
+        <button id="tabBench" role="tab" aria-selected="false" aria-controls="viewBench" onclick="switchTab('bench')" class="px-3.5 py-1.5 rounded-md text-gray-400 hover:text-white transition flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-vaultCyan">
+          <span aria-hidden="true">📊</span> BENCHMARKS & RAFT
         </button>
       </nav>
     </div>
@@ -85,22 +90,22 @@
     <!-- RIGHT CONTROL GUARD & AUTH -->
     <div class="flex items-center gap-3">
       <div class="flex items-center gap-2 bg-[#121A29] px-3 py-1.5 rounded-lg border border-vaultBorder text-xs">
-        <span class="text-vaultMuted font-mono text-[11px]">Role Guard:</span>
-        <select id="roleSelector" onchange="changeActiveRole(this.value)" class="bg-transparent text-vaultCyan font-bold outline-none cursor-pointer text-xs">
+        <label for="roleSelector" class="text-vaultMuted font-mono text-[11px]">Role Guard:</label>
+        <select id="roleSelector" aria-label="User RBAC Role Guard" onchange="changeActiveRole(this.value)" class="bg-transparent text-vaultCyan font-bold outline-none cursor-pointer text-xs focus:ring-1 focus:ring-vaultCyan rounded">
           <option value="ADMIN" class="bg-[#0F1623] text-white">Platform Owner (Full Access)</option>
           <option value="DEVOPS" class="bg-[#0F1623] text-white">DevOps Engineer (Chaos Access)</option>
           <option value="VIEWER" class="bg-[#0F1623] text-white">Viewer (Read Only)</option>
         </select>
       </div>
 
-      <button onclick="openModal('authModal')" class="text-xs bg-sky-500/10 text-vaultCyan border border-sky-500/30 hover:bg-sky-500/20 px-3.5 py-1.5 rounded-lg transition font-medium">
+      <button aria-label="Sign In User Modal" onclick="openModal('authModal')" class="text-xs bg-sky-500/10 text-vaultCyan border border-sky-500/30 hover:bg-sky-500/20 px-3.5 py-1.5 rounded-lg transition font-medium focus:outline-none focus:ring-2 focus:ring-vaultCyan">
         Sign In
       </button>
     </div>
   </header>
 
   <!-- MAIN CONTENT CONTAINER -->
-  <main class="flex-1 max-w-[1600px] w-full mx-auto p-6 space-y-6">
+  <main id="main-content" role="main" aria-label="Vault Management Dashboard" class="flex-1 max-w-[1600px] w-full mx-auto p-6 space-y-6">
 
     <!-- TOP TELEMETRY STATS GRID -->
     <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
