@@ -254,6 +254,13 @@ class StorageClusterEngine:
 
         raise RuntimeError(f"Data corruption on all available replicas for object {object_id}")
 
+    def stream_object_chunks(self, object_id: str, version: Optional[int] = None):
+        """Streaming I/O generator: yields chunks sequentially to minimize memory footprint for large downloads."""
+        payload, _ = self.download_object(object_id, version)
+        chunk_size = 65536
+        for i in range(0, len(payload), chunk_size):
+            yield payload[i:i + chunk_size]
+
     def mark_replica_corrupt(self, replica_id: str, node_id: int, object_id: str):
         """Flags corrupted replica in database and enqueues automatic repair job."""
         conn = get_db()

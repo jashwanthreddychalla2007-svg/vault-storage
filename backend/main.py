@@ -265,8 +265,12 @@ def download_object_endpoint(object_id: str, version: Optional[int] = None):
         filename = row["name"] if row else "download.bin"
         conn.close()
 
+        import urllib.parse
+        safe_filename = filename.encode('ascii', 'ignore').decode('ascii') or "download.bin"
+        quoted_filename = urllib.parse.quote(filename)
+
         headers = {
-            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Disposition": f'attachment; filename="{safe_filename}"; filename*=UTF-8\'\'{quoted_filename}',
             "X-Vault-Repaired": str(repaired)
         }
         return Response(content=data, media_type="application/octet-stream", headers=headers)
